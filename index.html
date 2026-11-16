@@ -646,16 +646,21 @@
         <div>
           <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">既存のグループIDを入力して参加</label>
           <div class="flex gap-2">
-            <input type="text" id="input-room-id" placeholder="例：team-1234" class="flex-1 font-mono text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-            <button type="button" onclick="applyRoomId()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shrink-0">入室する</button>
+            <input type="text" id="input-room-id" placeholder="例：team-abc123" class="flex-1 font-mono text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+            <button type="button" onclick="applyRoomId()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shrink-0">入室する</button>
           </div>
         </div>
 
-        <div class="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+        <div class="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
           <button type="button" onclick="closeRoomModal(); openCreateGroupModal();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-bold text-indigo-600 dark:text-indigo-300 transition">
             + 新しいグループを作成
           </button>
-          <button type="button" onclick="closeRoomModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">閉じる</button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-leave-group-room-modal" onclick="confirmLeaveCurrentGroup()" class="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-xs font-bold text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-500/30 transition">
+              <i class="fa-solid fa-right-from-bracket mr-1"></i>グループ退出
+            </button>
+            <button type="button" onclick="closeRoomModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">閉じる</button>
+          </div>
         </div>
       </div>
     </div>
@@ -707,10 +712,6 @@
               <i class="fa-regular fa-copy mr-1"></i>IDコピー
             </button>
           </div>
-          <button type="button" onclick="copyHomeScreenSyncUrl()" class="w-full py-2 px-3 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 border border-indigo-200/80 dark:border-indigo-500/30 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 transition flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-mobile-screen-button"></i>
-            <span>ホーム画面追加用の引継ぎURLをコピー</span>
-          </button>
           <div class="pt-1 border-t border-slate-200/70 dark:border-zinc-700/70">
             <label class="block text-[10px] font-bold text-slate-500 dark:text-zinc-400 mb-1">別ブラウザ・ホーム画面アプリにアカウントを引き継ぐ場合</label>
             <div class="flex gap-1.5">
@@ -812,31 +813,29 @@
       </div>
 
       <div class="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/90 flex items-center justify-between gap-2">
-        <button type="button" onclick="closeDayEventsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition">
-          閉じる
-        </button>
-        <button type="button" id="btn-day-modal-add-event" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm shadow-emerald-500/20 transition flex items-center gap-1.5">
+        <button type="button" id="btn-day-modal-add-event" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-2xs transition flex items-center gap-1.5">
           <i class="fa-solid fa-plus"></i>
           <span>この日に予定を追加</span>
+        </button>
+        <button type="button" onclick="closeDayEventsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition">
+          閉じる
         </button>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル9：メンバー管理・削除・ホスト譲渡     -->
+  <!-- モーダル9：参加メンバー管理・ホスト権限譲渡 -->
   <!-- ========================================== -->
   <div id="members-manage-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeMembersManageModal()">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <i class="fa-solid fa-crown text-amber-500"></i>
-            <span>グループメンバー・ホスト管理</span>
+            <span>参加メンバー管理</span>
           </h3>
-          <p id="members-manage-subtitle" class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-            参加メンバーの確認・ホスト権限の管理
-          </p>
+          <p id="members-manage-subtitle" class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">メンバー一覧・ホスト権限の管理</p>
         </div>
         <button onclick="closeMembersManageModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
           <i class="fa-solid fa-xmark"></i>
@@ -844,18 +843,18 @@
       </div>
 
       <div class="p-5 overflow-y-auto flex-1 flex flex-col gap-3">
-        <!-- ホスト権限ステータス案内バー -->
-        <div id="host-status-banner" class="p-3 rounded-xl border text-xs flex items-center justify-between gap-2">
-          <!-- JSで描画 -->
+        <div id="host-status-banner" class="p-3 rounded-xl border text-xs flex items-center gap-2">
+          <!-- JSでホスト権限ステータスを描画 -->
         </div>
-
         <div id="members-manage-list" class="flex flex-col gap-2">
-          <!-- JSでメンバー一覧・削除/ホスト譲渡ボタンを描画 -->
+          <!-- JSでメンバー一覧・削除・ホスト譲渡ボタンを描画 -->
         </div>
       </div>
 
-      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/90 flex items-center justify-between">
-        <span class="text-[11px] text-slate-400 dark:text-zinc-500">※ホストはメンバーの削除やホスト譲渡が可能です</span>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/90 flex items-center justify-between gap-2">
+        <button type="button" onclick="confirmLeaveCurrentGroup()" class="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-xs font-bold text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-500/30 transition">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i>このグループから退出
+        </button>
         <button type="button" onclick="closeMembersManageModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition">
           閉じる
         </button>
@@ -1675,6 +1674,92 @@
         }
       );
     };
+
+    window.confirmLeaveCurrentGroup = function() {
+      if (!state.roomId) {
+        showToast('現在参加中のグループがありません', 'info');
+        return;
+      }
+
+      const myUid = getEffectiveAccountId();
+      const otherMembers = state.members.filter(m => m.uid && m.uid !== myUid);
+
+      if (isCurrentUserHost() && otherMembers.length > 0) {
+        showToast('他のメンバーがいるため、先に「メンバー管理」からホスト権限を譲渡してください', 'error');
+        closeRoomModal();
+        openMembersManageModal();
+        return;
+      }
+
+      const groupLabel = state.roomName || state.roomId;
+      const isLastHost = isCurrentUserHost() && otherMembers.length === 0;
+      const confirmMsg = isLastHost
+        ? `グループ「${groupLabel}」から退出しますか？（他にメンバーがいないため、グループデータも削除されます）`
+        : `グループ「${groupLabel}」から退出しますか？再度参加するにはグループIDまたは招待リンクが必要になります。`;
+
+      openConfirmModal(
+        confirmMsg,
+        async () => {
+          await executeLeaveCurrentGroup(isLastHost);
+        },
+        {
+          title: 'グループの退出',
+          confirmText: '退出する',
+          variant: 'danger'
+        }
+      );
+    };
+
+    async function executeLeaveCurrentGroup(deleteRoomMeta = false) {
+      const targetRoomId = state.roomId;
+      const targetRoomName = state.roomName || targetRoomId;
+      const myUid = getEffectiveAccountId();
+      if (!targetRoomId) return;
+
+      closeRoomModal();
+      closeMembersManageModal();
+
+      clearRoomSubscriptions();
+
+      if (isFirebaseReady && db) {
+        try {
+          if (myUid) {
+            const memberDocId = `${targetRoomId}_${myUid}`;
+            await deleteDoc(doc(db, `${getRoomBasePath(targetRoomId)}/members`, memberDocId));
+          }
+          if (deleteRoomMeta) {
+            await deleteDoc(doc(db, `${getRoomBasePath(targetRoomId)}/rooms`, targetRoomId));
+          }
+        } catch (e) {
+          console.error('Leave group error:', e);
+        }
+      }
+
+      removeGroupFromHistory(targetRoomId);
+      state.roomId = '';
+      state.roomName = '';
+      state.hostUid = '';
+      state.members = [];
+      state.tasks = [];
+      state.events = [];
+      state.selectedDate = null;
+
+      updateUrlHashState();
+      updateRoomUI();
+      updateProfileUI();
+      renderActiveMembersBar();
+      renderTasks();
+      renderCalendar();
+      renderEventsList();
+
+      showToast(`グループ「${targetRoomName}」から退出しました`, 'info');
+
+      if (state.recentGroups.length > 0) {
+        openRoomModal();
+      } else {
+        openCreateGroupModal(true);
+      }
+    }
 
     // ==========================================
     // 5. 現在進行中の仕事（タスク）管理
@@ -2839,18 +2924,6 @@
       if (!uid) return;
       copyTextToClipboard(uid);
       showToast('固定アカウントIDをコピーしました');
-    };
-
-    window.copyHomeScreenSyncUrl = function() {
-      const uid = getEffectiveAccountId();
-      if (!uid) return;
-      const baseUrl = window.location.href.split('#')[0];
-      const params = [];
-      if (state.roomId) params.push(`room=${encodeURIComponent(state.roomId)}`);
-      params.push(`uid=${encodeURIComponent(uid)}`);
-      const syncUrl = `${baseUrl}#${params.join('&')}`;
-      copyTextToClipboard(syncUrl);
-      showToast('引継ぎURLをコピーしました！Safariで開いて「ホーム画面に追加」してください', 'info');
     };
 
     window.importAccountUid = async function() {
