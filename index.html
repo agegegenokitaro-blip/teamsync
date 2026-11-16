@@ -151,38 +151,45 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3.5 sm:py-6">
     
     <!-- 同期ステータス・クイックアクションバー -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 mb-4 sm:mb-6 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs transition-colors">
-      <div class="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-        <div class="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-zinc-300 shrink-0">
-          <i class="fa-solid fa-users text-indigo-500 dark:text-indigo-400"></i>
-          <span>メンバー:</span>
+    <div class="flex flex-col gap-2.5 sm:gap-3 mb-4 sm:mb-6 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs transition-colors">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div class="flex items-center gap-2 flex-wrap min-w-0">
+          <button type="button" onclick="toggleMembersDrawer()" id="btn-toggle-members-drawer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 transition shrink-0">
+            <i class="fa-solid fa-users text-[11px]"></i>
+            <span id="toggle-members-btn-label">メンバーを表示する</span>
+            <span id="members-count-badge" class="px-1.5 py-0.2 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold">0</span>
+            <i id="members-drawer-chevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
+          </button>
+          <button onclick="openMembersManageModal()" id="btn-manage-members" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 transition shrink-0" title="メンバー一覧・ホスト管理">
+            <i class="fa-solid fa-crown text-[10px] text-amber-500"></i>
+            <span>メンバー管理</span>
+          </button>
         </div>
-        <div id="active-members-bar" class="flex flex-wrap items-center gap-1.5 min-w-0">
-          <!-- JSでメンバーバッジを描画 -->
-          <span class="text-xs text-slate-400 dark:text-zinc-500">読み込み中...</span>
+        <div class="grid grid-cols-4 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto sm:ml-auto">
+          <button onclick="openProfileModal()" class="px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition flex items-center justify-center gap-1" title="このグループでの表示名や役割を設定">
+            <i class="fa-regular fa-id-card"></i>
+            <span class="truncate">プロフィール</span>
+          </button>
+          <button onclick="copyRoomLink()" class="px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition flex items-center justify-center gap-1" title="グループIDと招待URLをコピー">
+            <i class="fa-regular fa-copy"></i>
+            <span class="truncate">招待コピー</span>
+          </button>
+          <button onclick="openTaskModal()" class="px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-sm shadow-indigo-500/20 transition flex items-center justify-center gap-1">
+            <i class="fa-solid fa-plus"></i>
+            <span class="truncate">仕事報告</span>
+          </button>
+          <button onclick="openEventModal()" class="px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm shadow-emerald-500/20 transition flex items-center justify-center gap-1">
+            <i class="fa-regular fa-calendar-plus"></i>
+            <span class="truncate">予定追加</span>
+          </button>
         </div>
-        <button onclick="openMembersManageModal()" id="btn-manage-members" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 transition shrink-0" title="メンバー一覧・ホスト管理">
-          <i class="fa-solid fa-crown text-[10px] text-amber-500"></i>
-          <span>メンバー管理</span>
-        </button>
       </div>
-      <div class="grid grid-cols-4 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto sm:ml-auto">
-        <button onclick="openProfileModal()" class="px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition flex items-center justify-center gap-1" title="このグループでの表示名や役割を設定">
-          <i class="fa-regular fa-id-card"></i>
-          <span class="truncate">プロフィール</span>
-        </button>
-        <button onclick="copyRoomLink()" class="px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition flex items-center justify-center gap-1" title="グループIDと招待URLをコピー">
-          <i class="fa-regular fa-copy"></i>
-          <span class="truncate">招待コピー</span>
-        </button>
-        <button onclick="openTaskModal()" class="px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-sm shadow-indigo-500/20 transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-plus"></i>
-          <span class="truncate">仕事報告</span>
-        </button>
-        <button onclick="openEventModal()" class="px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm shadow-emerald-500/20 transition flex items-center justify-center gap-1">
-          <i class="fa-regular fa-calendar-plus"></i>
-          <span class="truncate">予定追加</span>
-        </button>
+
+      <!-- タップで展開するメンバー一覧（最上段：自分 → ホスト → 五十音順） -->
+      <div id="members-drawer" class="hidden pt-2.5 border-t border-slate-100 dark:border-zinc-800">
+        <div id="active-members-bar" class="flex flex-col gap-1.5">
+          <!-- JSでメンバー一覧を描画 -->
+        </div>
       </div>
     </div>
 
@@ -1588,12 +1595,13 @@
 
     function renderActiveMembersBar() {
       const bar = document.getElementById('active-members-bar');
+      const countBadge = document.getElementById('members-count-badge');
       if (!bar) return;
 
       const myAccountId = getEffectiveAccountId();
-      const membersToDisplay = [...state.members];
-      if (myAccountId && state.roomId && !membersToDisplay.some(m => m.uid === myAccountId)) {
-        membersToDisplay.unshift({
+      const rawMembers = [...state.members];
+      if (myAccountId && state.roomId && !rawMembers.some(m => m.uid === myAccountId)) {
+        rawMembers.unshift({
           uid: myAccountId,
           name: state.profile.name,
           role: state.profile.role,
@@ -1601,25 +1609,73 @@
         });
       }
 
-      if (membersToDisplay.length === 0) {
-        bar.innerHTML = `<span class="text-xs text-slate-400 dark:text-zinc-500">グループ未参加</span>`;
+      if (countBadge) {
+        countBadge.textContent = rawMembers.length;
+      }
+
+      if (rawMembers.length === 0) {
+        bar.innerHTML = `<span class="text-xs text-slate-400 dark:text-zinc-500 py-1">グループ未参加</span>`;
         return;
       }
 
-      bar.innerHTML = membersToDisplay.map(m => {
+      // 並び順：1.最上段に自分 -> 2.その下にホスト -> 3.その下からは五十音順
+      const meList = [];
+      const hostList = [];
+      const otherList = [];
+
+      rawMembers.forEach(m => {
+        const isMe = myAccountId && m.uid === myAccountId;
+        const isHost = state.hostUid && m.uid === state.hostUid;
+        if (isMe) {
+          meList.push(m);
+        } else if (isHost) {
+          hostList.push(m);
+        } else {
+          otherList.push(m);
+        }
+      });
+
+      otherList.sort((a, b) => {
+        const nameA = (a.name || 'ゲスト').trim();
+        const nameB = (b.name || 'ゲスト').trim();
+        return nameA.localeCompare(nameB, 'ja');
+      });
+
+      const sortedMembers = [...meList, ...hostList, ...otherList];
+
+      bar.innerHTML = sortedMembers.map(m => {
         const c = AVATAR_COLORS.find(col => col.id === m.color) || AVATAR_COLORS[0];
         const isHost = state.hostUid && m.uid === state.hostUid;
         const isMe = myAccountId && m.uid === myAccountId;
         return `
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 border ${isHost ? 'border-amber-300 dark:border-amber-500/40' : 'border-slate-200/80 dark:border-zinc-700'}">
-            <span class="w-4 h-4 rounded-full ${c.bg} text-white flex items-center justify-center text-[9px] font-bold">${escapeHtml((m.name || 'ゲ').slice(0, 1))}</span>
-            <span>${escapeHtml(m.name || 'ゲスト')}</span>
-            ${isHost ? '<i class="fa-solid fa-crown text-[9px] text-amber-500" title="ホスト"></i>' : ''}
-            ${isMe ? '<span class="text-[9px] text-indigo-500 dark:text-indigo-400 font-bold">(自分)</span>' : ''}
-          </span>
+          <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs bg-slate-50/90 dark:bg-zinc-800/80 border ${isMe ? 'border-indigo-300 dark:border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-500/10' : isHost ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50/40 dark:bg-amber-500/5' : 'border-slate-200/80 dark:border-zinc-700/80'}">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-6 h-6 rounded-lg ${c.bg} text-white flex items-center justify-center text-[11px] font-bold shrink-0 shadow-2xs">${escapeHtml((m.name || 'ゲ').slice(0, 1))}</span>
+              <span class="font-bold text-slate-800 dark:text-zinc-100 truncate">${escapeHtml(m.name || 'ゲスト')}</span>
+              ${isMe ? '<span class="px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold shrink-0">自分</span>' : ''}
+              ${isHost ? '<span class="px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 text-[10px] font-bold shrink-0"><i class="fa-solid fa-crown mr-0.5 text-[9px] text-amber-500"></i>ホスト</span>' : ''}
+            </div>
+            <span class="text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-[120px] sm:max-w-[180px]">${escapeHtml(m.role || '役割未設定')}</span>
+          </div>
         `;
       }).join('');
     }
+
+    window.toggleMembersDrawer = function() {
+      const drawer = document.getElementById('members-drawer');
+      const label = document.getElementById('toggle-members-btn-label');
+      const chevron = document.getElementById('members-drawer-chevron');
+      if (!drawer) return;
+
+      const isHidden = drawer.classList.contains('hidden');
+      drawer.classList.toggle('hidden', !isHidden);
+      if (label) {
+        label.textContent = isHidden ? 'メンバーを閉じる' : 'メンバーを表示する';
+      }
+      if (chevron) {
+        chevron.classList.toggle('rotate-180', isHidden);
+      }
+    };
 
     function updateMemberFilterOptions() {
       const select = document.getElementById('filter-member');
@@ -1631,15 +1687,14 @@
         if (t.member) names.add(t.member);
         if (Array.isArray(t.collaborators)) t.collaborators.forEach(c => names.add(c));
       });
-
       select.innerHTML = `<option value="ALL">すべてのメンバー</option>` +
         Array.from(names).map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
-      if (Array.from(names).includes(currentVal)) {
-        select.value = currentVal;
-      }
+      select.value = Array.from(names).includes(currentVal) ? currentVal : 'ALL';
     }
 
-    // メンバー管理・ホスト譲渡・回復モーダル
+    // ==========================================
+    // 4.5 メンバー管理・ホスト譲渡・緊急引き継ぎ投票・退出
+    // ==========================================
     window.openMembersManageModal = function() {
       if (!state.roomId) {
         showToast('先にグループを作成または選択してください', 'info');
@@ -1657,150 +1712,135 @@
       modal.classList.remove('flex');
     };
 
+    function getRequiredApprovalsCount(totalMembers) {
+      if (totalMembers >= 5) return 3;
+      if (totalMembers === 4) return 2;
+      if (totalMembers === 3) return 1;
+      return 0;
+    }
+
     function renderMembersManageModal() {
       const banner = document.getElementById('host-status-banner');
+      const recDisplayBox = document.getElementById('host-recovery-display-box');
+      const recCodeText = document.getElementById('host-recovery-code-text');
       const listEl = document.getElementById('members-manage-list');
-      const subtitleEl = document.getElementById('members-manage-subtitle');
-      const recoveryDisplayBox = document.getElementById('host-recovery-display-box');
-      const recoveryCodeText = document.getElementById('host-recovery-code-text');
       const takeoverBox = document.getElementById('host-takeover-request-box');
-      const recoveryClaimBox = document.getElementById('host-recovery-claim-box');
-      const emergencyBtn = document.getElementById('btn-emergency-claim-host');
-      if (!banner || !listEl) return;
+      const claimBox = document.getElementById('host-recovery-claim-box');
+      if (!listEl) return;
 
-      const myUid = getEffectiveAccountId();
+      const myId = getEffectiveAccountId();
       const amIHost = isCurrentUserHost();
 
-      const membersList = [...state.members];
-      if (myUid && !membersList.some(m => m.uid === myUid)) {
-        membersList.unshift({
-          uid: myUid,
-          name: state.profile.name || 'ゲスト',
-          role: state.profile.role || '',
-          color: state.profile.color || 'indigo'
+      const allMembers = [...state.members];
+      if (myId && !allMembers.some(m => m.uid === myId)) {
+        allMembers.unshift({
+          uid: myId,
+          name: state.profile.name,
+          role: state.profile.role,
+          color: state.profile.color
         });
       }
 
-      const totalCount = membersList.length;
-      const requiredApprovals = getRequiredHostTakeoverApprovals(totalCount);
-
-      if (subtitleEl) {
-        subtitleEl.textContent = `${state.roomName || state.roomId}（参加メンバー ${totalCount}名）`;
-      }
-
-      if (amIHost) {
-        banner.className = 'p-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2';
-        banner.innerHTML = `<i class="fa-solid fa-crown text-amber-500 text-sm shrink-0"></i><span>あなたは<strong>ホスト</strong>です。メンバーの削除やホスト権限の譲渡が行えます。</span>`;
-        if (recoveryDisplayBox) recoveryDisplayBox.classList.remove('hidden');
-        if (recoveryCodeText) recoveryCodeText.textContent = state.hostRecoveryCode || '発行中...';
-        if (recoveryClaimBox) recoveryClaimBox.classList.add('hidden');
-      } else {
-        const hostMember = membersList.find(m => m.uid === state.hostUid);
-        const hostName = hostMember ? hostMember.name : '不在（未登録）';
-        banner.className = 'p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 text-xs flex items-center gap-2';
-        banner.innerHTML = `<i class="fa-solid fa-shield-halved text-indigo-500 shrink-0"></i><span>現在のホスト: <strong>${escapeHtml(hostName)}</strong></span>`;
-        if (recoveryDisplayBox) recoveryDisplayBox.classList.add('hidden');
-        if (recoveryClaimBox) recoveryClaimBox.classList.remove('hidden');
-        if (emergencyBtn) {
-          emergencyBtn.innerHTML = requiredApprovals > 0
-            ? `<i class="fa-solid fa-crown mr-1 text-amber-500"></i>自分が新しいホストを引き継ぐ（他メンバー${requiredApprovals}人の同意が必要）`
-            : `<i class="fa-solid fa-crown mr-1 text-amber-500"></i>自分が新しいホストを引き継ぐ（緊急対応）`;
-        }
-      }
-
-      // 進行中の緊急ホスト引き継ぎ申請（同意投票）の表示制御
-      const req = state.hostTakeoverRequest;
-      if (takeoverBox) {
-        if (req && req.candidateUid && req.candidateUid !== state.hostUid) {
-          const validMemberUids = new Set(membersList.map(m => m.uid));
-          const approvals = Array.isArray(req.approvals)
-            ? req.approvals.filter(u => u !== req.candidateUid && validMemberUids.has(u))
-            : [];
-          const reqNeeded = getRequiredHostTakeoverApprovals(totalCount);
-          const isCandidate = myUid === req.candidateUid;
-          const hasApproved = approvals.includes(myUid);
-          const approverNames = approvals.map(u => {
-            const hit = membersList.find(m => m.uid === u);
-            return hit ? hit.name : 'メンバー';
-          });
-
-          takeoverBox.classList.remove('hidden');
-          takeoverBox.innerHTML = `
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
-                <i class="fa-solid fa-hand-sparkles text-amber-500"></i>
-                <span>ホスト緊急引き継ぎの申請中</span>
-              </div>
-              <span class="px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-500/30 text-amber-950 dark:text-amber-100 text-[11px] font-extrabold">
-                同意 ${approvals.length} / ${reqNeeded}人
-              </span>
-            </div>
-            <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
-              <strong>${escapeHtml(req.candidateName || 'メンバー')}</strong> さんが新しいホストへの引き継ぎを申請しています（現在 ${totalCount}名グループのため、他メンバー <strong>${reqNeeded}人</strong> の同意で交代します）。
-            </p>
-            ${approverNames.length > 0 ? `
-              <div class="text-[10px] text-amber-800 dark:text-amber-300 bg-white/70 dark:bg-zinc-900/60 px-2.5 py-1.5 rounded-lg">
-                <i class="fa-solid fa-check-double mr-1 text-emerald-600"></i>同意済み: ${escapeHtml(approverNames.join('、'))}
-              </div>
-            ` : ''}
-            <div class="flex items-center gap-2 pt-0.5">
-              ${isCandidate ? `
-                <span class="flex-1 text-[11px] font-semibold text-amber-800 dark:text-amber-300">他のメンバーの同意を待っています...</span>
-                <button type="button" onclick="cancelHostTakeoverRequest()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-600 text-slate-600 dark:text-zinc-300 text-[11px] font-bold hover:bg-slate-100 shrink-0">
-                  申請を取り下げる
-                </button>
-              ` : `
-                <button type="button" onclick="toggleApproveHostTakeover()" class="flex-1 py-2 rounded-lg text-xs font-bold transition shadow-2xs ${hasApproved ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500 text-white'}">
-                  ${hasApproved ? '<i class="fa-solid fa-check mr-1"></i>同意済み（タップで取消）' : '<i class="fa-solid fa-thumbs-up mr-1"></i>この人のホスト引き継ぎに同意する'}
-                </button>
-                ${amIHost ? `
-                  <button type="button" onclick="cancelHostTakeoverRequest()" class="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold shrink-0">
-                    却下
-                  </button>
-                ` : ''}
-              `}
-            </div>
-          `;
+      if (banner) {
+        if (amIHost) {
+          banner.className = 'p-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2';
+          banner.innerHTML = `<i class="fa-solid fa-crown text-amber-500"></i><span>あなたは現在の<strong>ホスト</strong>です。メンバーの削除やホスト権限の譲渡が可能です。</span>`;
         } else {
-          takeoverBox.classList.add('hidden');
-          takeoverBox.innerHTML = '';
+          const hostObj = allMembers.find(m => m.uid === state.hostUid);
+          banner.className = 'p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/70 text-slate-600 dark:text-zinc-300 text-xs flex items-center gap-2';
+          banner.innerHTML = `<i class="fa-solid fa-user-shield text-indigo-500"></i><span>現在のホスト: <strong>${escapeHtml(hostObj ? hostObj.name : '未設定')}</strong></span>`;
         }
       }
 
-      listEl.innerHTML = membersList.map(m => {
-        const c = AVATAR_COLORS.find(col => col.id === m.color) || AVATAR_COLORS[0];
-        const isHost = state.hostUid && m.uid === state.hostUid;
-        const isMe = myUid && m.uid === myUid;
+      if (recDisplayBox && recCodeText) {
+        if (amIHost && state.hostRecoveryCode) {
+          recDisplayBox.classList.remove('hidden');
+          recCodeText.textContent = state.hostRecoveryCode;
+        } else {
+          recDisplayBox.classList.add('hidden');
+        }
+      }
 
+      listEl.innerHTML = allMembers.map(m => {
+        const c = AVATAR_COLORS.find(col => col.id === m.color) || AVATAR_COLORS[0];
+        const isMe = m.uid === myId;
+        const isHost = m.uid === state.hostUid;
         return `
-          <div class="flex items-center justify-between gap-2 p-3 rounded-xl border ${isHost ? 'border-amber-200/90 dark:border-amber-500/30 bg-amber-50/30 dark:bg-amber-500/5' : 'border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900'}">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-9 h-9 rounded-xl ${c.bg} text-white flex items-center justify-center text-xs font-bold shrink-0">
-                ${escapeHtml((m.name || 'ゲ').slice(0, 1))}
-              </div>
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-900">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="w-7 h-7 rounded-lg ${c.bg} text-white flex items-center justify-center text-xs font-bold shrink-0">${escapeHtml((m.name || 'ゲ').slice(0, 1))}</span>
               <div class="min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="flex items-center gap-1.5">
                   <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(m.name || 'ゲスト')}</span>
-                  ${isHost ? '<span class="px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold"><i class="fa-solid fa-crown mr-0.5"></i>ホスト</span>' : ''}
-                  ${isMe ? '<span class="px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold">自分</span>' : ''}
+                  ${isMe ? '<span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">(自分)</span>' : ''}
+                  ${isHost ? '<span class="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-bold">👑 ホスト</span>' : ''}
                 </div>
-                <div class="text-[11px] text-slate-500 dark:text-zinc-400 truncate">${escapeHtml(m.role || '役割未設定')}</div>
+                <div class="text-[10px] text-slate-400 truncate">${escapeHtml(m.role || '役割未設定')}</div>
               </div>
             </div>
-
             ${amIHost && !isMe ? `
-              <div class="flex items-center gap-1.5 shrink-0">
-                <button type="button" onclick="confirmTransferHost('${escapeHtml(m.uid)}', '${escapeHtml(m.name || 'メンバー')}')" class="px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 text-[11px] font-bold transition" title="ホスト権限を譲渡">
-                  <i class="fa-solid fa-crown mr-1"></i>ホスト譲渡
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="confirmTransferHost('${escapeHtml(m.uid)}', '${escapeHtml(m.name || 'メンバー')}')" class="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 text-[10px] font-bold transition">
+                  👑 ホスト譲渡
                 </button>
-                <button type="button" onclick="confirmKickMember('${escapeHtml(m.uid)}', '${escapeHtml(m.name || 'メンバー')}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 text-[11px] font-bold transition" title="グループから削除">
-                  <i class="fa-solid fa-user-xmark"></i>
+                <button type="button" onclick="confirmKickMember('${escapeHtml(m.uid)}', '${escapeHtml(m.name || 'メンバー')}')" class="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-500/30 text-[10px] font-bold transition">
+                  削除
                 </button>
               </div>
             ` : ''}
           </div>
         `;
       }).join('');
+
+      // 緊急ホスト引き継ぎ申請（同意投票）パネル
+      const req = state.hostTakeoverRequest;
+      if (takeoverBox) {
+        if (req && req.candidateUid) {
+          const required = getRequiredApprovalsCount(allMembers.length);
+          const validApprovals = (Array.isArray(req.approvals) ? req.approvals : []).filter(
+            uid => uid !== req.candidateUid && allMembers.some(m => m.uid === uid)
+          );
+          const hasVoted = validApprovals.includes(myId);
+          const isCandidate = req.candidateUid === myId;
+
+          takeoverBox.classList.remove('hidden');
+          takeoverBox.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-bullhorn text-amber-600"></i>
+                <span>ホスト緊急引き継ぎ申請中</span>
+              </div>
+              <span class="px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-extrabold">同意 ${validApprovals.length} / ${required}人</span>
+            </div>
+            <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+              <strong>${escapeHtml(req.candidateName || 'メンバー')}</strong> さんが新しいホストへの引き継ぎを申請しています（全${allMembers.length}人中、他メンバー${required}人の同意で交代）。
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              ${!isCandidate && !hasVoted ? `
+                <button type="button" onclick="approveHostTakeover()" class="flex-1 py-1.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-2xs transition">
+                  <i class="fa-solid fa-thumbs-up mr-1"></i>この人のホスト引き継ぎに同意する
+                </button>
+              ` : ''}
+              ${!isCandidate && hasVoted ? `
+                <span class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 text-xs font-bold text-center">
+                  <i class="fa-solid fa-check mr-1"></i>同意済みです
+                </span>
+              ` : ''}
+              ${(isCandidate || amIHost) ? `
+                <button type="button" onclick="cancelHostTakeoverRequest()" class="py-1.5 px-3 rounded-lg bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-600 text-slate-600 dark:text-zinc-300 text-xs font-semibold hover:bg-slate-100">
+                  申請を取り消す
+                </button>
+              ` : ''}
+            </div>
+          `;
+        } else {
+          takeoverBox.classList.add('hidden');
+        }
+      }
+
+      if (claimBox) {
+        claimBox.classList.toggle('hidden', amIHost);
+      }
     }
 
     window.copyHostRecoveryCode = function() {
@@ -1809,309 +1849,204 @@
       showToast('ホスト緊急回復コードをコピーしました');
     };
 
-    window.claimHostByRecoveryCode = async function() {
-      const input = document.getElementById('input-host-recovery-code');
-      const entered = (input?.value || '').trim().toUpperCase();
-      if (!entered) {
-        showToast('回復コードを入力してください', 'info');
-        return;
-      }
-      if (!state.hostRecoveryCode || entered !== state.hostRecoveryCode.toUpperCase()) {
-        showToast('回復コードが一致しません', 'error');
-        return;
-      }
-      await promoteSelfToHost('回復コード認証によりホスト権限を引き継ぎました！');
-      if (input) input.value = '';
-    };
-
-    window.confirmEmergencyClaimHost = function() {
-      const myUid = getEffectiveAccountId();
-      const validMemberUids = new Set(state.members.map(m => m.uid));
-      if (myUid) validMemberUids.add(myUid);
-      const totalMembers = validMemberUids.size;
-      const requiredApprovals = getRequiredHostTakeoverApprovals(totalMembers);
-
-      if (requiredApprovals <= 0) {
-        openConfirmModal(
-          '元のホストが端末紛失やログイン不能などで操作できない状態ですか？\n「引き継ぐ」を押すと、あなたのアカウントが新しいホストに設定されます。',
-          async () => {
-            await promoteSelfToHost('緊急引き継ぎにより新しいホストになりました！');
-          },
-          {
-            title: 'ホスト権限の緊急引き継ぎ',
-            confirmText: '引き継ぐ',
-            variant: 'host'
-          }
-        );
-        return;
-      }
-
-      openConfirmModal(
-        `現在のグループ人数は ${totalMembers}人 のため、新しいホストになるには他のメンバー ${requiredApprovals}人 の同意が必要です。\nホスト引き継ぎを申請しますか？`,
-        async () => {
-          await startHostTakeoverRequest(requiredApprovals);
-        },
-        {
-          title: 'ホスト引き継ぎの申請（同意投票）',
-          confirmText: '申請する',
-          variant: 'host'
-        }
-      );
-    };
-
-    function getRequiredHostTakeoverApprovals(memberCount) {
-      if (memberCount >= 5) return 3;
-      if (memberCount === 4) return 2;
-      if (memberCount === 3) return 1;
-      return 0;
-    }
-
-    async function startHostTakeoverRequest(requiredApprovals) {
-      const myUid = getEffectiveAccountId();
-      if (!isFirebaseReady || !db || !state.roomId || !myUid) return;
-      try {
-        const reqPayload = {
-          candidateUid: myUid,
-          candidateName: state.profile.name || 'ゲスト',
-          approvals: [],
-          createdAt: Date.now()
-        };
-        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-        await setDoc(metaRef, {
-          roomId: state.roomId,
-          name: state.roomName || state.roomId,
-          hostTakeoverRequest: reqPayload,
-          updatedAt: Date.now()
-        }, { merge: true });
-        state.hostTakeoverRequest = reqPayload;
-        renderMembersManageModal();
-        showToast(`ホスト引き継ぎを申請しました（他メンバー${requiredApprovals}人の同意で交代します）`, 'info');
-      } catch (e) {
-        console.error('startHostTakeoverRequest error:', e);
-        showToast('引き継ぎ申請に失敗しました', 'error');
-      }
-    }
-
-    window.toggleApproveHostTakeover = async function() {
-      const myUid = getEffectiveAccountId();
-      const req = state.hostTakeoverRequest;
-      if (!isFirebaseReady || !db || !state.roomId || !myUid || !req || !req.candidateUid) return;
-      if (myUid === req.candidateUid) return;
-
-      const validMemberUids = new Set(state.members.map(m => m.uid));
-      validMemberUids.add(myUid);
-      const totalMembers = validMemberUids.size;
-      const requiredApprovals = getRequiredHostTakeoverApprovals(totalMembers);
-
-      let approvals = Array.isArray(req.approvals)
-        ? req.approvals.filter(u => u !== req.candidateUid && validMemberUids.has(u))
-        : [];
-
-      if (approvals.includes(myUid)) {
-        approvals = approvals.filter(u => u !== myUid);
-      } else {
-        approvals.push(myUid);
-      }
-
-      const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-
-      try {
-        // 必要同意数に達した場合は即座に新しいホストへ昇格
-        if (approvals.length >= requiredApprovals) {
-          const newCode = generateHostRecoveryCode();
-          await setDoc(metaRef, {
-            hostUid: req.candidateUid,
-            hostRecoveryCode: newCode,
-            hostTakeoverRequest: null,
-            updatedAt: Date.now()
-          }, { merge: true });
-          showToast(`同意が${requiredApprovals}人に達したため、${req.candidateName || '申請者'}さんが新しいホストになりました！`, 'success');
-        } else {
-          const updatedReq = { ...req, approvals };
-          await updateDoc(metaRef, {
-            hostTakeoverRequest: updatedReq,
-            updatedAt: Date.now()
-          });
-          showToast(`同意状況を更新しました（現在 ${approvals.length} / ${requiredApprovals}人）`, 'info');
-        }
-      } catch (e) {
-        console.error('toggleApproveHostTakeover error:', e);
-        showToast('同意の更新に失敗しました', 'error');
-      }
-    };
-
-    window.cancelHostTakeoverRequest = async function() {
-      if (!isFirebaseReady || !db || !state.roomId) return;
-      try {
-        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-        await updateDoc(metaRef, {
-          hostTakeoverRequest: null,
-          updatedAt: Date.now()
-        });
-        showToast('ホスト引き継ぎ申請を取り消しました', 'info');
-      } catch (e) {
-        showToast('申請の取り消しに失敗しました', 'error');
-      }
-    };
-
-    async function promoteSelfToHost(successMessage) {
-      const myUid = getEffectiveAccountId();
-      if (!isFirebaseReady || !db || !state.roomId || !myUid) return;
-      try {
-        const newCode = generateHostRecoveryCode();
-        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-        await setDoc(metaRef, {
-          roomId: state.roomId,
-          name: state.roomName || state.roomId,
-          hostUid: myUid,
-          hostRecoveryCode: newCode,
-          hostTakeoverRequest: null,
-          updatedAt: Date.now()
-        }, { merge: true });
-        state.hostUid = myUid;
-        state.hostRecoveryCode = newCode;
-        state.hostTakeoverRequest = null;
-        updateProfileUI();
-        renderActiveMembersBar();
-        renderMembersManageModal();
-        showToast(successMessage, 'success');
-      } catch (e) {
-        console.error('promoteSelfToHost error:', e);
-        showToast('ホスト権限の引き継ぎに失敗しました', 'error');
-      }
-    }
-
     window.confirmTransferHost = function(targetUid, targetName) {
       openConfirmModal(
         `「${targetName}」さんにホスト権限を譲渡しますか？譲渡後、あなたは一般メンバーになります。`,
         async () => {
-          if (!isFirebaseReady || !db || !state.roomId) return;
           try {
             const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-            await updateDoc(metaRef, { hostUid: targetUid, updatedAt: Date.now() });
-            showToast(`${targetName}さんにホスト権限を譲渡しました`, 'success');
+            await updateDoc(metaRef, { hostUid: targetUid, hostTakeoverRequest: null, updatedAt: Date.now() });
+            showToast(`${targetName} さんにホスト権限を譲渡しました`);
           } catch (e) {
-            showToast('ホスト譲渡に失敗しました', 'error');
+            showToast('ホスト権限の譲渡に失敗しました', 'error');
           }
         },
-        {
-          title: 'ホスト権限の譲渡',
-          confirmText: '譲渡する',
-          variant: 'host'
-        }
+        { title: 'ホスト権限の譲渡', confirmText: '譲渡する', variant: 'host' }
       );
     };
 
     window.confirmKickMember = function(targetUid, targetName) {
       openConfirmModal(
-        `「${targetName}」さんをこのグループから削除しますか？`,
+        `「${targetName}」さんをこのグループから削除（強制退出）してもよろしいですか？`,
         async () => {
-          if (!isFirebaseReady || !db || !state.roomId) return;
           try {
-            const memberDocId = `${state.roomId}_${targetUid}`;
-            await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/members`, memberDocId));
-            showToast(`${targetName}さんをグループから削除しました`, 'success');
+            await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/members`, `${state.roomId}_${targetUid}`));
+            showToast(`${targetName} さんをグループから削除しました`);
           } catch (e) {
             showToast('メンバーの削除に失敗しました', 'error');
           }
-        },
-        {
-          title: 'メンバーの削除',
-          confirmText: '削除する',
-          variant: 'danger'
         }
       );
     };
 
-    window.confirmLeaveCurrentGroup = function() {
-      if (!state.roomId) {
-        showToast('現在参加中のグループがありません', 'info');
+    window.claimHostByRecoveryCode = async function() {
+      const input = document.getElementById('input-host-recovery-code');
+      const code = (input?.value || '').trim().toUpperCase();
+      if (!code) {
+        showToast('回復コードを入力してください', 'info');
+        return;
+      }
+      if (!state.hostRecoveryCode || code !== state.hostRecoveryCode.toUpperCase()) {
+        showToast('回復コードが一致しません', 'error');
+        return;
+      }
+      try {
+        const myId = getEffectiveAccountId();
+        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+        await updateDoc(metaRef, { hostUid: myId, hostTakeoverRequest: null, updatedAt: Date.now() });
+        input.value = '';
+        showToast('回復コードが認証され、ホスト権限を復元しました！');
+      } catch (e) {
+        showToast('ホスト権限の回復に失敗しました', 'error');
+      }
+    };
+
+    window.confirmEmergencyClaimHost = function() {
+      const myId = getEffectiveAccountId();
+      const totalMembers = Math.max(state.members.length, 1);
+      const required = getRequiredApprovalsCount(totalMembers);
+
+      if (required === 0) {
+        openConfirmModal(
+          '現在のホストがログイン不能な状態ですか？あなたが新しいホストを引き継ぎます。',
+          async () => {
+            try {
+              const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+              await updateDoc(metaRef, { hostUid: myId, hostTakeoverRequest: null, updatedAt: Date.now() });
+              showToast('新しいホストを引き継ぎました！');
+            } catch (e) {
+              showToast('ホスト引き継ぎに失敗しました', 'error');
+            }
+          },
+          { title: 'ホスト権限の譲渡', confirmText: '譲渡する', variant: 'host' }
+        );
         return;
       }
 
-      const myUid = getEffectiveAccountId();
-      const otherMembers = state.members.filter(m => m.uid && m.uid !== myUid);
+      openConfirmModal(
+        `現在グループには${totalMembers}人のメンバーがいるため、他のメンバー${required}人以上の同意が必要です。新しいホストへの引き継ぎ申請を開始しますか？`,
+        async () => {
+          try {
+            const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+            await updateDoc(metaRef, {
+              hostTakeoverRequest: {
+                candidateUid: myId,
+                candidateName: state.profile.name || 'ゲスト',
+                approvals: [],
+                createdAt: Date.now()
+              },
+              updatedAt: Date.now()
+            });
+            showToast(`ホスト引き継ぎ申請を開始しました（他メンバー${required}人の同意待ち）`);
+          } catch (e) {
+            showToast('申請の開始に失敗しました', 'error');
+          }
+        },
+        { title: 'ホスト引き継ぎの申請', confirmText: '申請を開始する', variant: 'host' }
+      );
+    };
+
+    window.approveHostTakeover = async function() {
+      const req = state.hostTakeoverRequest;
+      const myId = getEffectiveAccountId();
+      if (!req || !req.candidateUid || !myId || req.candidateUid === myId) return;
+
+      const currentApprovals = Array.isArray(req.approvals) ? req.approvals : [];
+      const updatedApprovals = Array.from(new Set([...currentApprovals, myId]));
+      const validApprovals = updatedApprovals.filter(
+        uid => uid !== req.candidateUid && state.members.some(m => m.uid === uid)
+      );
+      const required = getRequiredApprovalsCount(state.members.length);
+
+      try {
+        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+        if (validApprovals.length >= required) {
+          await updateDoc(metaRef, {
+            hostUid: req.candidateUid,
+            hostTakeoverRequest: null,
+            updatedAt: Date.now()
+          });
+          showToast(`同意数が達成されたため、${req.candidateName} さんが新しいホストになりました！`);
+        } else {
+          await updateDoc(metaRef, {
+            'hostTakeoverRequest.approvals': updatedApprovals,
+            updatedAt: Date.now()
+          });
+          showToast(`ホスト引き継ぎに同意しました（現在 ${validApprovals.length} / ${required}人）`);
+        }
+      } catch (e) {
+        showToast('同意の送信に失敗しました', 'error');
+      }
+    };
+
+    window.cancelHostTakeoverRequest = async function() {
+      try {
+        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+        await updateDoc(metaRef, { hostTakeoverRequest: null, updatedAt: Date.now() });
+        showToast('ホスト引き継ぎ申請を取り消しました');
+      } catch (e) {
+        showToast('取り消しに失敗しました', 'error');
+      }
+    };
+
+    window.confirmLeaveCurrentGroup = function() {
+      if (!state.roomId) return;
+      const myId = getEffectiveAccountId();
+      const otherMembers = state.members.filter(m => m.uid !== myId);
 
       if (isCurrentUserHost() && otherMembers.length > 0) {
-        showToast('他のメンバーがいるため、先に「メンバー管理」からホスト権限を譲渡してください', 'error');
+        showToast('他のメンバーが残っているため、先に「メンバー管理」からホスト権限を譲渡してください', 'error');
         closeRoomModal();
         openMembersManageModal();
         return;
       }
 
-      const groupLabel = state.roomName || state.roomId;
-      const isLastHost = isCurrentUserHost() && otherMembers.length === 0;
-      const confirmMsg = isLastHost
-        ? `グループ「${groupLabel}」から退出しますか？（他にメンバーがいないため、グループデータも削除されます）`
-        : `グループ「${groupLabel}」から退出しますか？再度参加するにはグループIDまたは招待リンクが必要になります。`;
-
       openConfirmModal(
-        confirmMsg,
+        `グループ「${state.roomName || state.roomId}」から退出しますか？`,
         async () => {
-          await executeLeaveCurrentGroup(isLastHost);
+          const leavingRoomId = state.roomId;
+          try {
+            if (isFirebaseReady && db && myId) {
+              await deleteDoc(doc(db, `${getRoomBasePath(leavingRoomId)}/members`, `${leavingRoomId}_${myId}`));
+              if (otherMembers.length === 0) {
+                await deleteDoc(doc(db, `${getRoomBasePath(leavingRoomId)}/rooms`, leavingRoomId)).catch(() => {});
+              }
+            }
+          } catch (e) {}
+
+          clearRoomSubscriptions();
+          removeGroupFromHistory(leavingRoomId);
+          closeRoomModal();
+          closeMembersManageModal();
+
+          if (state.recentGroups.length > 0) {
+            const nextGroup = state.recentGroups[0];
+            state.roomName = nextGroup.name;
+            await verifyAndEnterRoom(nextGroup.id);
+          } else {
+            state.roomId = '';
+            state.roomName = '';
+            state.hostUid = '';
+            state.members = [];
+            state.tasks = [];
+            state.events = [];
+            updateUrlHashState();
+            updateRoomUI();
+            updateProfileUI();
+            renderActiveMembersBar();
+            renderTasks();
+            renderCalendar();
+            renderEventsList();
+            openCreateGroupModal(true);
+          }
+          showToast('グループから退出しました');
         },
-        {
-          title: 'グループの退出',
-          confirmText: '退出する',
-          variant: 'danger'
-        }
+        { title: 'グループ退出の確認', confirmText: '退出する' }
       );
     };
 
-    async function executeLeaveCurrentGroup(deleteRoomMeta = false) {
-      const targetRoomId = state.roomId;
-      const targetRoomName = state.roomName || targetRoomId;
-      const myUid = getEffectiveAccountId();
-      if (!targetRoomId) return;
-
-      closeRoomModal();
-      closeMembersManageModal();
-
-      clearRoomSubscriptions();
-
-      if (isFirebaseReady && db) {
-        try {
-          if (myUid) {
-            const memberDocId = `${targetRoomId}_${myUid}`;
-            await deleteDoc(doc(db, `${getRoomBasePath(targetRoomId)}/members`, memberDocId));
-          }
-          if (deleteRoomMeta) {
-            await deleteDoc(doc(db, `${getRoomBasePath(targetRoomId)}/rooms`, targetRoomId));
-          }
-        } catch (e) {
-          console.error('Leave group error:', e);
-        }
-      }
-
-      removeGroupFromHistory(targetRoomId);
-      state.roomId = '';
-      state.roomName = '';
-      state.hostUid = '';
-      state.hostRecoveryCode = '';
-      state.members = [];
-      state.tasks = [];
-      state.events = [];
-      state.selectedDate = null;
-
-      updateUrlHashState();
-      updateRoomUI();
-      updateProfileUI();
-      renderActiveMembersBar();
-      renderTasks();
-      renderCalendar();
-      renderEventsList();
-
-      showToast(`グループ「${targetRoomName}」から退出しました`, 'info');
-
-      if (state.recentGroups.length > 0) {
-        openRoomModal();
-      } else {
-        openCreateGroupModal(true);
-      }
-    }
-
     // ==========================================
-    // 5. 現在進行中の仕事（タスク）管理
+    // 5. メインタブ切替 & 進行中の仕事ボード
     // ==========================================
     window.switchMainTab = function(tab) {
       state.mainTab = tab;
@@ -2122,13 +2057,13 @@
       const btnCal = document.getElementById('tab-calendar');
       if (!secTasks || !secCal) return;
 
-      const activeCls = ['bg-white', 'dark:bg-zinc-700', 'text-indigo-600', 'dark:text-indigo-300', 'shadow-xs'];
-      const inactiveCls = ['text-slate-600', 'dark:text-zinc-400'];
+      const activeClasses = ['bg-white', 'dark:bg-zinc-700', 'text-indigo-600', 'dark:text-indigo-300', 'shadow-xs'];
+      const inactiveClasses = ['text-slate-600', 'dark:text-zinc-400'];
 
       [btnBoth, btnTasks, btnCal].forEach(btn => {
         if (!btn) return;
-        btn.classList.remove(...activeCls);
-        btn.classList.add(...inactiveCls);
+        btn.classList.remove(...activeClasses);
+        btn.classList.add(...inactiveClasses);
       });
 
       if (tab === 'both') {
@@ -2136,17 +2071,26 @@
         secTasks.classList.add('lg:col-span-7');
         secCal.classList.remove('hidden', 'lg:col-span-12');
         secCal.classList.add('lg:col-span-5');
-        if (btnBoth) { btnBoth.classList.add(...activeCls); btnBoth.classList.remove(...inactiveCls); }
+        if (btnBoth) {
+          btnBoth.classList.remove(...inactiveClasses);
+          btnBoth.classList.add(...activeClasses);
+        }
       } else if (tab === 'tasks') {
         secTasks.classList.remove('hidden', 'lg:col-span-7');
         secTasks.classList.add('lg:col-span-12');
         secCal.classList.add('hidden');
-        if (btnTasks) { btnTasks.classList.add(...activeCls); btnTasks.classList.remove(...inactiveCls); }
+        if (btnTasks) {
+          btnTasks.classList.remove(...inactiveClasses);
+          btnTasks.classList.add(...activeClasses);
+        }
       } else if (tab === 'calendar') {
         secCal.classList.remove('hidden', 'lg:col-span-5');
         secCal.classList.add('lg:col-span-12');
         secTasks.classList.add('hidden');
-        if (btnCal) { btnCal.classList.add(...activeCls); btnCal.classList.remove(...inactiveCls); }
+        if (btnCal) {
+          btnCal.classList.remove(...inactiveClasses);
+          btnCal.classList.add(...activeClasses);
+        }
       }
     };
 
@@ -2154,38 +2098,22 @@
       state.taskViewMode = mode;
       const btnCards = document.getElementById('btn-view-cards');
       const btnKanban = document.getElementById('btn-view-kanban');
-      const activeCls = ['bg-white', 'dark:bg-zinc-700', 'text-indigo-600', 'dark:text-indigo-300', 'shadow-2xs'];
-      const inactiveCls = ['text-slate-600', 'dark:text-zinc-400'];
+      const active = ['bg-white', 'dark:bg-zinc-700', 'text-indigo-600', 'dark:text-indigo-300', 'shadow-2xs'];
+      const inactive = ['text-slate-600', 'dark:text-zinc-400'];
 
       if (mode === 'cards') {
-        btnCards.classList.add(...activeCls); btnCards.classList.remove(...inactiveCls);
-        btnKanban.classList.remove(...activeCls); btnKanban.classList.add(...inactiveCls);
+        btnCards?.classList.add(...active);
+        btnCards?.classList.remove(...inactive);
+        btnKanban?.classList.remove(...active);
+        btnKanban?.classList.add(...inactive);
       } else {
-        btnKanban.classList.add(...activeCls); btnKanban.classList.remove(...inactiveCls);
-        btnCards.classList.remove(...activeCls); btnCards.classList.add(...inactiveCls);
+        btnKanban?.classList.add(...active);
+        btnKanban?.classList.remove(...inactive);
+        btnCards?.classList.remove(...active);
+        btnCards?.classList.add(...inactive);
       }
       renderTasks();
     };
-
-    function getFilteredTasks() {
-      const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
-      const memberFilter = document.getElementById('filter-member')?.value || 'ALL';
-      const searchStr = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
-
-      return state.tasks.filter(t => {
-        if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
-        if (memberFilter !== 'ALL') {
-          const isMain = t.member === memberFilter;
-          const isCollab = Array.isArray(t.collaborators) && t.collaborators.includes(memberFilter);
-          if (!isMain && !isCollab) return false;
-        }
-        if (searchStr) {
-          const hay = `${t.title || ''} ${t.desc || ''} ${t.tag || ''} ${t.member || ''}`.toLowerCase();
-          if (!hay.includes(searchStr)) return false;
-        }
-        return true;
-      });
-    }
 
     function getStatusBadgeClass(status) {
       switch (status) {
@@ -2197,26 +2125,45 @@
       }
     }
 
+    function getPriorityLabel(p) {
+      if (p === '高') return '🔥 高';
+      if (p === '低') return '🌱 低';
+      return '⚡ 中';
+    }
+
     function renderTasks() {
       const container = document.getElementById('tasks-container');
-      const countBadge = document.getElementById('badge-task-count');
+      const badgeCount = document.getElementById('badge-task-count');
       if (!container) return;
 
-      const activeTasksCount = state.tasks.filter(t => t.status !== '完了').length;
-      if (countBadge) countBadge.textContent = activeTasksCount;
+      const activeCount = state.tasks.filter(t => t.status !== '完了').length;
+      if (badgeCount) badgeCount.textContent = activeCount;
 
-      const filtered = getFilteredTasks();
+      const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
+      const memberFilter = document.getElementById('filter-member')?.value || 'ALL';
+      const searchFilter = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+
+      const filtered = state.tasks.filter(t => {
+        if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+        if (memberFilter !== 'ALL') {
+          const collabs = Array.isArray(t.collaborators) ? t.collaborators : [];
+          if (t.member !== memberFilter && !collabs.includes(memberFilter)) return false;
+        }
+        if (searchFilter) {
+          const hay = `${t.title || ''} ${t.desc || ''} ${t.tag || ''} ${t.member || ''}`.toLowerCase();
+          if (!hay.includes(searchFilter)) return false;
+        }
+        return true;
+      });
+
       if (filtered.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-12 px-4 border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl">
+          <div class="text-center py-10 px-4">
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto mb-3 text-lg">
               <i class="fa-solid fa-clipboard-list"></i>
             </div>
-            <p class="text-sm font-bold text-slate-700 dark:text-zinc-200">現在表示する仕事がありません</p>
-            <p class="text-xs text-slate-400 dark:text-zinc-500 mt-1 mb-4">右上の「仕事報告」ボタンから今の作業内容を共有しましょう</p>
-            <button onclick="openTaskModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs">
-              + 最初の仕事を報告する
-            </button>
+            <p class="text-xs font-bold text-slate-700 dark:text-zinc-200">表示する仕事がありません</p>
+            <p class="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">右上の「仕事報告」ボタンから現在の作業を共有できます</p>
           </div>
         `;
         return;
@@ -2227,14 +2174,14 @@
         container.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             ${statuses.map(st => {
-              const items = filtered.filter(t => t.status === st);
+              const items = filtered.filter(t => (t.status || '進行中') === st);
               return `
                 <div class="bg-slate-50/80 dark:bg-zinc-800/40 rounded-xl p-3 border border-slate-200/70 dark:border-zinc-800">
                   <div class="flex items-center justify-between mb-2.5">
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeClass(st)}">${st}</span>
-                    <span class="text-xs font-bold text-slate-400">${items.length}件</span>
+                    <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${getStatusBadgeClass(st)}">${st}</span>
+                    <span class="text-[11px] font-bold text-slate-400">${items.length}件</span>
                   </div>
-                  <div class="flex flex-col gap-2.5">
+                  <div class="flex flex-col gap-2">
                     ${items.length === 0 ? `<p class="text-[11px] text-slate-400 text-center py-4">なし</p>` : items.map(t => renderSingleTaskCard(t, true)).join('')}
                   </div>
                 </div>
@@ -2243,62 +2190,42 @@
           </div>
         `;
       } else {
-        container.innerHTML = `
-          <div class="flex flex-col gap-3">
-            ${filtered.map(t => renderSingleTaskCard(t, false)).join('')}
-          </div>
-        `;
+        container.innerHTML = `<div class="flex flex-col gap-3">${filtered.map(t => renderSingleTaskCard(t, false)).join('')}</div>`;
       }
     }
 
     function renderSingleTaskCard(t, compact = false) {
       const progress = Number(t.progress ?? 0);
       const collabs = Array.isArray(t.collaborators) ? t.collaborators : [];
-      const acks = Array.isArray(t.acks) ? t.acks : [];
       const comments = Array.isArray(t.comments) ? t.comments : [];
-      const myName = state.profile.name || 'ゲスト';
-      const hasAcked = acks.includes(myName);
-      const priorityIcon = t.priority === '高' ? '🔥' : t.priority === '低' ? '🌱' : '⚡';
+      const acks = Array.isArray(t.acks) ? t.acks : [];
+      const myId = getEffectiveAccountId();
+      const hasAcked = myId && acks.includes(myId);
 
       return `
-        <div class="group bg-white dark:bg-zinc-900/90 hover:bg-slate-50/70 dark:hover:bg-zinc-800/70 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-3.5 transition shadow-2xs">
+        <div class="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-3.5 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition shadow-2xs">
           <div class="flex items-start justify-between gap-2 mb-2">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeClass(t.status)}">${escapeHtml(t.status || '進行中')}</span>
-              <span class="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">${priorityIcon} ${escapeHtml(t.priority || '中')}</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${getStatusBadgeClass(t.status)}">${escapeHtml(t.status || '進行中')}</span>
+              <span class="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">${getPriorityLabel(t.priority)}</span>
               ${t.tag ? `<span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 text-[10px] font-semibold">#${escapeHtml(t.tag)}</span>` : ''}
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <button onclick="openTaskModal('${escapeHtml(t.id)}')" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center text-xs transition" title="編集">
+              <button type="button" onclick="openTaskModal('${escapeHtml(t.id)}')" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-indigo-600 flex items-center justify-center text-xs transition" title="編集">
                 <i class="fa-solid fa-pen"></i>
               </button>
-              <button onclick="deleteTask('${escapeHtml(t.id)}')" class="w-7 h-7 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 flex items-center justify-center text-xs transition" title="削除">
+              <button type="button" onclick="deleteTask('${escapeHtml(t.id)}')" class="w-7 h-7 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 flex items-center justify-center text-xs transition" title="削除">
                 <i class="fa-regular fa-trash-can"></i>
               </button>
             </div>
           </div>
 
-          <div onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="cursor-pointer">
-            <h3 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-snug mb-1">
-              ${escapeHtml(t.title)}
-            </h3>
-            ${!compact && t.desc ? `<p class="text-xs text-slate-500 dark:text-zinc-400 line-clamp-2 mb-2.5">${escapeHtml(t.desc)}</p>` : ''}
+          <div onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="cursor-pointer group">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-snug mb-1">${escapeHtml(t.title)}</h3>
+            ${(!compact && t.desc) ? `<p class="text-xs text-slate-500 dark:text-zinc-400 line-clamp-2 mb-2.5">${escapeHtml(t.desc)}</p>` : ''}
           </div>
 
-          <!-- 担当者 & 共同作業者 -->
-          <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600 dark:text-zinc-300 mb-2.5">
-            <span class="inline-flex items-center gap-1 font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-500/15 px-2 py-0.5 rounded-md">
-              <i class="fa-solid fa-user text-[9px]"></i>${escapeHtml(t.member || '未定')}
-            </span>
-            ${collabs.map(c => `
-              <span class="inline-flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 px-2 py-0.5 rounded-md">
-                <i class="fa-solid fa-user-group text-[9px] text-slate-400"></i>${escapeHtml(c)}
-              </span>
-            `).join('')}
-          </div>
-
-          <!-- 進捗スライダー -->
-          <div class="bg-slate-50 dark:bg-zinc-800/70 p-2.5 rounded-xl border border-slate-100 dark:border-zinc-800 mb-2.5">
+          <div class="mb-2.5">
             <div class="flex items-center justify-between text-[11px] font-bold mb-1">
               <span class="text-slate-500 dark:text-zinc-400">進捗率</span>
               <span class="text-indigo-600 dark:text-indigo-400">${progress}%</span>
@@ -2306,21 +2233,48 @@
             <input type="range" min="0" max="100" step="5" value="${progress}" onchange="quickUpdateTaskProgress('${escapeHtml(t.id)}', this.value)" class="w-full h-1.5 cursor-pointer">
           </div>
 
-          <!-- フッターアクション -->
-          <div class="flex items-center justify-between pt-1 text-[11px]">
-            <button onclick="toggleTaskAck('${escapeHtml(t.id)}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold border transition ${hasAcked ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-200 dark:border-indigo-500/40 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:bg-slate-50'}">
-              <i class="fa-solid fa-thumbs-up"></i>
-              <span>確認済 ${acks.length > 0 ? acks.length : ''}</span>
-            </button>
-
-            <button onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition">
-              <i class="fa-regular fa-comment-dots text-indigo-500"></i>
-              <span>詳細・コメント (${comments.length})</span>
-            </button>
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80 text-[11px]">
+            <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
+              <span class="font-bold text-slate-700 dark:text-zinc-200"><i class="fa-regular fa-user mr-1 text-indigo-500"></i>${escapeHtml(t.member || '未設定')}</span>
+              ${collabs.length > 0 ? `<span class="text-slate-400 dark:text-zinc-500 truncate">+ ${escapeHtml(collabs.join(', '))}</span>` : ''}
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="toggleTaskAck('${escapeHtml(t.id)}')" class="px-2 py-1 rounded-lg border text-[10px] font-bold transition ${hasAcked ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-indigo-50'}">
+                <i class="fa-regular fa-thumbs-up mr-0.5"></i>確認済 ${acks.length > 0 ? acks.length : ''}
+              </button>
+              <button type="button" onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="px-2 py-1 rounded-lg bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 text-[10px] font-bold transition">
+                <i class="fa-regular fa-comment mr-0.5"></i>${comments.length}
+              </button>
+            </div>
           </div>
         </div>
       `;
     }
+
+    window.quickUpdateTaskProgress = async function(taskId, val) {
+      if (!isFirebaseReady || !db || !state.roomId) return;
+      const num = Number(val);
+      const updates = { progress: num, updatedAt: Date.now() };
+      if (num === 100) updates.status = '完了';
+      try {
+        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), updates);
+      } catch (e) {
+        showToast('進捗の更新に失敗しました', 'error');
+      }
+    };
+
+    window.toggleTaskAck = async function(taskId) {
+      if (!isFirebaseReady || !db || !state.roomId) return;
+      const myId = getEffectiveAccountId();
+      if (!myId) return;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const acks = Array.isArray(task.acks) ? [...task.acks] : [];
+      const nextAcks = acks.includes(myId) ? acks.filter(id => id !== myId) : [...acks, myId];
+      try {
+        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), { acks: nextAcks });
+      } catch (e) {}
+    };
 
     window.openTaskModal = function(taskId = '') {
       if (!state.roomId) {
@@ -2340,8 +2294,8 @@
         document.getElementById('task-title').value = t.title || '';
         document.getElementById('task-member').value = t.member || state.profile.name || '';
         document.getElementById('task-status').value = t.status || '進行中';
-        document.getElementById('task-progress').value = t.progress ?? 0;
-        document.getElementById('task-progress-label').textContent = (t.progress ?? 0) + '%';
+        document.getElementById('task-progress').value = t.progress ?? 30;
+        document.getElementById('task-progress-label').textContent = `${t.progress ?? 30}%`;
         document.getElementById('task-priority').value = t.priority || '中';
         document.getElementById('task-tag').value = t.tag || '';
         document.getElementById('task-desc').value = t.desc || '';
@@ -2351,8 +2305,8 @@
         document.getElementById('task-id').value = '';
         document.getElementById('task-member').value = state.profile.name || '';
         document.getElementById('task-status').value = '進行中';
-        document.getElementById('task-progress').value = 20;
-        document.getElementById('task-progress-label').textContent = '20%';
+        document.getElementById('task-progress').value = 30;
+        document.getElementById('task-progress-label').textContent = '30%';
         document.getElementById('task-priority').value = '中';
         state.selectedTaskCollaborators = [];
       }
@@ -2414,20 +2368,20 @@
       if (!isFirebaseReady || !db || !state.roomId) return;
 
       const id = document.getElementById('task-id').value;
-      const progressVal = Number(document.getElementById('task-progress').value);
-      let statusVal = document.getElementById('task-status').value;
-      if (progressVal === 100 && statusVal !== '完了') statusVal = '完了';
+      const progress = Number(document.getElementById('task-progress').value);
+      let status = document.getElementById('task-status').value;
+      if (progress === 100 && status !== '完了') status = '完了';
 
       const payload = {
         roomId: state.roomId,
         title: document.getElementById('task-title').value.trim(),
         member: document.getElementById('task-member').value.trim(),
-        status: statusVal,
-        progress: progressVal,
-        priority: document.getElementById('task-priority').value,
-        tag: document.getElementById('task-tag').value.trim().replace(/^#/, ''),
-        desc: document.getElementById('task-desc').value.trim(),
+        status,
         collaborators: state.selectedTaskCollaborators,
+        progress,
+        priority: document.getElementById('task-priority').value,
+        tag: document.getElementById('task-tag').value.trim(),
+        desc: document.getElementById('task-desc').value.trim(),
         updatedAt: Date.now()
       };
 
@@ -2438,10 +2392,10 @@
           showToast('作業内容を更新しました');
         } else {
           payload.createdAt = Date.now();
-          payload.acks = [];
           payload.comments = [];
+          payload.acks = [];
           await addDoc(colRef, payload);
-          showToast('新しい作業を共有しました');
+          showToast('新しい仕事を共有しました');
         }
         closeTaskModal();
       } catch (err) {
@@ -2450,43 +2404,11 @@
       }
     };
 
-    window.quickUpdateTaskProgress = async function(taskId, newVal) {
-      if (!isFirebaseReady || !db || !state.roomId) return;
-      const progress = Number(newVal);
-      const t = state.tasks.find(item => item.id === taskId);
-      const updates = { progress, updatedAt: Date.now() };
-      if (progress === 100) updates.status = '完了';
-      else if (t && t.status === '完了' && progress < 100) updates.status = '進行中';
-
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), updates);
-        showToast(`進捗率を ${progress}% に更新しました`);
-      } catch (e) {
-        showToast('更新に失敗しました', 'error');
-      }
-    };
-
-    window.toggleTaskAck = async function(taskId) {
-      if (!isFirebaseReady || !db || !state.roomId) return;
-      const t = state.tasks.find(item => item.id === taskId);
-      if (!t) return;
-      const myName = state.profile.name || 'ゲスト';
-      const acks = Array.isArray(t.acks) ? [...t.acks] : [];
-      const idx = acks.indexOf(myName);
-      if (idx >= 0) acks.splice(idx, 1);
-      else acks.push(myName);
-
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), { acks });
-      } catch (e) {}
-    };
-
     window.deleteTask = function(taskId) {
       openConfirmModal('この作業報告を削除してもよろしいですか？', async () => {
-        if (!isFirebaseReady || !db || !state.roomId) return;
         try {
           await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId));
-          showToast('作業を削除しました');
+          showToast('削除しました');
         } catch (e) {
           showToast('削除に失敗しました', 'error');
         }
@@ -2511,42 +2433,44 @@
     function renderTaskDetailModal(taskId) {
       const t = state.tasks.find(item => item.id === taskId);
       if (!t) return;
-      const badge = document.getElementById('detail-status-badge');
-      badge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeClass(t.status)}`;
-      badge.textContent = t.status || '進行中';
+
+      const statusBadge = document.getElementById('detail-status-badge');
+      statusBadge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeClass(t.status)}`;
+      statusBadge.textContent = t.status || '進行中';
 
       document.getElementById('detail-priority-badge').textContent = `優先度: ${t.priority || '中'}`;
       document.getElementById('detail-title').textContent = t.title || '';
-      document.getElementById('detail-member').textContent = t.member || '未定';
-      document.getElementById('detail-updated').textContent = t.updatedAt ? new Date(t.updatedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      document.getElementById('detail-member').textContent = t.member || '未設定';
+      document.getElementById('detail-updated').textContent = t.updatedAt ? new Date(t.updatedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'たった今';
 
       const collabWrap = document.getElementById('detail-collaborators-wrap');
       const collabs = Array.isArray(t.collaborators) ? t.collaborators : [];
       if (collabs.length > 0) {
         collabWrap.classList.remove('hidden');
-        collabWrap.innerHTML = `<span class="text-[11px] text-slate-400">共同作業:</span>` + collabs.map(c => `<span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-[11px] font-semibold">${escapeHtml(c)}</span>`).join('');
+        collabWrap.innerHTML = `<span class="text-[11px] font-semibold text-slate-400">共同作業:</span>` +
+          collabs.map(c => `<span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">${escapeHtml(c)}</span>`).join('');
       } else {
         collabWrap.classList.add('hidden');
       }
 
-      const prog = Number(t.progress ?? 0);
-      document.getElementById('detail-progress-text').textContent = `${prog}%`;
-      document.getElementById('detail-progress-bar').style.width = `${prog}%`;
-      document.getElementById('detail-desc').textContent = t.desc || '詳細メモはありません。';
+      const progress = Number(t.progress ?? 0);
+      document.getElementById('detail-progress-text').textContent = `${progress}%`;
+      document.getElementById('detail-progress-bar').style.width = `${progress}%`;
+      document.getElementById('detail-desc').textContent = t.desc || '（詳細メモはありません）';
 
       const comments = Array.isArray(t.comments) ? t.comments : [];
       document.getElementById('detail-comment-count').textContent = comments.length;
       const listEl = document.getElementById('detail-comments-list');
       if (comments.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">まだコメントはありません</p>`;
+        listEl.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-3">まだコメントはありません</p>`;
       } else {
         listEl.innerHTML = comments.map(c => `
           <div class="bg-slate-50 dark:bg-zinc-800/80 p-2.5 rounded-xl border border-slate-100 dark:border-zinc-700/70">
-            <div class="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
+            <div class="flex items-center justify-between text-[10px] mb-1">
               <span class="font-bold text-slate-700 dark:text-zinc-200">${escapeHtml(c.author || 'ゲスト')}</span>
-              <span>${c.createdAt ? new Date(c.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+              <span class="text-slate-400">${c.createdAt ? new Date(c.createdAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
             </div>
-            <p class="text-xs text-slate-700 dark:text-zinc-200 whitespace-pre-wrap">${escapeHtml(c.text)}</p>
+            <p class="text-xs text-slate-600 dark:text-zinc-300 whitespace-pre-wrap">${escapeHtml(c.text)}</p>
           </div>
         `).join('');
       }
@@ -2554,49 +2478,47 @@
 
     window.submitTaskComment = async function(e) {
       e.preventDefault();
-      if (!isFirebaseReady || !db || !state.roomId || !state.activeDetailTaskId) return;
+      if (!state.activeDetailTaskId || !isFirebaseReady || !db) return;
       const input = document.getElementById('new-comment-input');
       const text = (input?.value || '').trim();
       if (!text) return;
 
-      const t = state.tasks.find(item => item.id === state.activeDetailTaskId);
-      if (!t) return;
-      const comments = Array.isArray(t.comments) ? [...t.comments] : [];
-      comments.push({
-        author: state.profile.name || 'ゲスト',
-        text,
-        createdAt: Date.now()
-      });
+      const task = state.tasks.find(t => t.id === state.activeDetailTaskId);
+      if (!task) return;
+      const nextComments = [
+        ...(Array.isArray(task.comments) ? task.comments : []),
+        { author: state.profile.name || 'ゲスト', text, createdAt: Date.now() }
+      ];
 
       try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, state.activeDetailTaskId), {
-          comments,
+        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, task.id), {
+          comments: nextComments,
           updatedAt: Date.now()
         });
         input.value = '';
       } catch (err) {
-        showToast('コメントの送信に失敗しました', 'error');
+        showToast('コメント送信に失敗しました', 'error');
       }
     };
 
     // ==========================================
     // 6. 共有カレンダー & 10色カラー分類
     // ==========================================
-    function getCategoryLabel(colorKey) {
-      const def = EVENT_COLORS.find(c => c.key === colorKey) || EVENT_COLORS[0];
-      const custom = state.customCategoryLabels?.[colorKey];
-      return custom && custom.trim() ? custom.trim() : def.defaultLabel;
-    }
-
     function getCategoryColorObj(colorKey) {
       return EVENT_COLORS.find(c => c.key === colorKey) || EVENT_COLORS[0];
     }
 
+    function getCategoryLabel(colorKey) {
+      const custom = state.customCategoryLabels?.[colorKey];
+      if (custom && custom.trim()) return custom.trim();
+      return getCategoryColorObj(colorKey).defaultLabel;
+    }
+
     function renderCalendarLegend() {
-      const container = document.getElementById('calendar-legend');
+      const legend = document.getElementById('calendar-legend');
       const resetBtn = document.getElementById('btn-reset-color-filter');
       const countBadge = document.getElementById('active-color-filter-count');
-      if (!container) return;
+      if (!legend) return;
 
       const selectedCount = state.selectedEventColors.length;
       if (resetBtn) {
@@ -2607,13 +2529,13 @@
         countBadge.textContent = selectedCount;
       }
 
-      container.innerHTML = EVENT_COLORS.map(c => {
+      legend.innerHTML = EVENT_COLORS.map(c => {
         const label = getCategoryLabel(c.key);
         const isSelected = state.selectedEventColors.includes(c.key);
         return `
-          <button type="button" onclick="toggleEventColorFilter('${c.key}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${isSelected ? `${c.pill} border-transparent shadow-2xs` : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200/90 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800'}">
-            <span class="w-2.5 h-2.5 rounded-full ${isSelected ? 'bg-white' : c.dot}"></span>
-            <span class="max-w-[88px] truncate">${escapeHtml(label)}</span>
+          <button type="button" onclick="toggleEventColorFilter('${c.key}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50 dark:bg-indigo-500/25 text-indigo-800 dark:text-indigo-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-50'}">
+            <span class="w-2.5 h-2.5 rounded-full ${c.dot} shrink-0"></span>
+            <span>${escapeHtml(label)}</span>
           </button>
         `;
       }).join('');
