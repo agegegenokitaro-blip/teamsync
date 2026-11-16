@@ -152,6 +152,10 @@
           <!-- JSでメンバーバッジを描画 -->
           <span class="text-xs text-slate-400 dark:text-zinc-500">読み込み中...</span>
         </div>
+        <button onclick="openMembersManageModal()" id="btn-manage-members" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 transition shrink-0" title="メンバー一覧・ホスト管理">
+          <i class="fa-solid fa-crown text-[10px] text-amber-500"></i>
+          <span>メンバー管理</span>
+        </button>
       </div>
       <div class="grid grid-cols-4 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto sm:ml-auto">
         <button onclick="openProfileModal()" class="px-2 sm:px-3 py-2 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-700 transition flex items-center justify-center gap-1" title="このグループでの表示名や役割を設定">
@@ -870,6 +874,46 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- モーダル9：メンバー管理・削除・ホスト譲渡     -->
+  <!-- ========================================== -->
+  <div id="members-manage-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeMembersManageModal()">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-crown text-amber-500"></i>
+            <span>グループメンバー・ホスト管理</span>
+          </h3>
+          <p id="members-manage-subtitle" class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+            参加メンバーの確認・ホスト権限の管理
+          </p>
+        </div>
+        <button onclick="closeMembersManageModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto flex-1 flex flex-col gap-3">
+        <!-- ホスト権限ステータス案内バー -->
+        <div id="host-status-banner" class="p-3 rounded-xl border text-xs flex items-center justify-between gap-2">
+          <!-- JSで描画 -->
+        </div>
+
+        <div id="members-manage-list" class="flex flex-col gap-2">
+          <!-- JSでメンバー一覧・削除/ホスト譲渡ボタンを描画 -->
+        </div>
+      </div>
+
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/90 flex items-center justify-between">
+        <span class="text-[11px] text-slate-400 dark:text-zinc-500">※ホストはメンバーの削除やホスト譲渡が可能です</span>
+        <button type="button" onclick="closeMembersManageModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK & アプリケーションロジック -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -901,6 +945,8 @@
       darkMode: false,
       roomId: '',
       roomName: '',
+      hostUid: '',
+      hostName: '',
       recentGroups: [],
       userName: 'ゲストメンバー',
       userRole: '',
@@ -1057,6 +1103,15 @@
       }
     }
 
+    function isCurrentUserHost() {
+      if (!state.roomId) return false;
+      const myUid = currentUser ? currentUser.uid : 'me';
+      if (state.hostUid) {
+        return state.hostUid === myUid;
+      }
+      return false;
+    }
+
     // グループ（ルーム）固有プロフィールの読み込みとメンバー登録同期
     async function loadRoomProfile(roomId) {
       if (!roomId) return;
@@ -1145,18 +1200,37 @@
       const membersCol = collection(db, 'artifacts', appId, 'public', 'data', 'roomMembers');
       const settingsDoc = doc(db, 'artifacts', appId, 'public', 'data', 'roomSettings', state.roomId);
 
-      state.unsubRoomSettings = onSnapshot(settingsDoc, (snap) => {
+      state.unsubRoomSettings = onSnapshot(settingsDoc, async (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           state.categoryLabels = data.categoryLabels || {};
+          state.hostUid = data.hostUid || data.createdBy || '';
+          state.hostName = data.hostName || '';
           if (data.groupName && data.groupName.trim()) {
             state.roomName = data.groupName.trim();
             saveGroupToHistory(state.roomId, state.roomName);
             updateRoomUI();
           }
+          // 既存グループでホスト未設定の場合は最初の参加者を自動ホスト化
+          if (!state.hostUid && currentUser) {
+            state.hostUid = currentUser.uid;
+            state.hostName = state.userName;
+            try {
+              await setDoc(settingsDoc, {
+                hostUid: currentUser.uid,
+                hostName: state.userName,
+                updatedAt: Date.now()
+              }, { merge: true });
+            } catch (e) { /* ignore */ }
+          }
         } else {
           state.categoryLabels = {};
+          state.hostUid = '';
+          state.hostName = '';
         }
+        updateProfileUI();
+        renderActiveMembersBar();
+        renderMembersManageModal();
         renderCalendarLegend();
         renderCalendar();
         renderEventsList();
@@ -1168,18 +1242,58 @@
         console.error('Room settings onSnapshot error:', error);
       });
 
-      state.unsubMembers = onSnapshot(membersCol, (snapshot) => {
+      state.unsubMembers = onSnapshot(membersCol, async (snapshot) => {
         const roomMembers = [];
+        let myDocRemoved = false;
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           if (data.roomId === state.roomId) {
-            roomMembers.push({ id: docSnap.id, ...data });
+            if (data.removed) {
+              if (currentUser && data.uid === currentUser.uid) {
+                myDocRemoved = true;
+              }
+            } else {
+              roomMembers.push({ id: docSnap.id, ...data });
+            }
           }
         });
-        roomMembers.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+        // ホストによってグループから削除された場合
+        if (myDocRemoved && !isCurrentUserHost()) {
+          showToast('ホストによってこのグループから削除されました', 'error');
+          state.recentGroups = state.recentGroups.filter(g => g.id !== state.roomId);
+          try {
+            localStorage.setItem('teamsync_group_history', JSON.stringify(state.recentGroups));
+          } catch (e) { /* ignore */ }
+          state.roomId = '';
+          state.roomName = '';
+          state.hostUid = '';
+          state.hostName = '';
+          state.tasks = [];
+          state.events = [];
+          state.roomMembers = [];
+          window.location.hash = '';
+          updateRoomUI();
+          updateBadges();
+          renderActiveMembersBar();
+          renderTasks();
+          renderCalendar();
+          renderEventsList();
+          closeMembersManageModal();
+          openCreateGroupModal(true);
+          return;
+        }
+
+        roomMembers.sort((a, b) => {
+          const aHost = a.uid === state.hostUid ? 1 : 0;
+          const bHost = b.uid === state.hostUid ? 1 : 0;
+          if (aHost !== bHost) return bHost - aHost;
+          return (b.updatedAt || 0) - (a.updatedAt || 0);
+        });
         state.roomMembers = roomMembers;
         renderActiveMembersBar();
         updateMemberFilterOptions();
+        renderMembersManageModal();
       }, (error) => {
         console.error('Members onSnapshot error:', error);
       });
@@ -1230,10 +1344,13 @@
 
     // オフラインデモ用フォールバック（クリーンな初期状態）
     function loadDemoFallbackData() {
+      state.hostUid = 'me';
+      state.hostName = state.userName || 'ゲストメンバー';
       state.roomMembers = state.userName ? [{ uid: 'me', name: state.userName, role: state.userRole || '', color: state.userColor }] : [];
       state.tasks = [];
       state.events = [];
       updateBadges();
+      updateProfileUI();
       renderActiveMembersBar();
       updateMemberFilterOptions();
       renderTasks();
@@ -2537,13 +2654,11 @@
       const creatorRole = document.getElementById('create-group-user-role').value.trim();
       const shouldCopyLink = document.getElementById('create-group-copy-link').checked;
 
-      if (!groupName || !sanitizedId || !creatorName || sanitizedId === 'team-alpha') {
-        showToast('グループ名・有効な半角英数字ID・表示名を入力してください', 'error');
-        return;
-      }
-
+      const myUid = currentUser ? currentUser.uid : 'me';
       state.roomId = sanitizedId;
       state.roomName = groupName;
+      state.hostUid = myUid;
+      state.hostName = creatorName;
       state.userName = creatorName;
       state.userRole = creatorRole;
       state.selectedDate = null;
@@ -2567,6 +2682,8 @@
           const settingsDoc = doc(db, 'artifacts', appId, 'public', 'data', 'roomSettings', sanitizedId);
           await setDoc(settingsDoc, {
             groupName,
+            hostUid: currentUser.uid,
+            hostName: creatorName,
             createdBy: currentUser.uid,
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -2598,9 +2715,9 @@
 
       if (shouldCopyLink) {
         copyRoomLink(true);
-        showToast(`グループ「${groupName}」を作成し、招待リンクをコピーしました！`, 'success');
+        showToast(`グループ「${groupName}」を作成し、あなたにホスト権限が付与されました！`, 'success');
       } else {
-        showToast(`新しいグループ「${groupName}」を作成しました！`, 'success');
+        showToast(`グループ「${groupName}」を作成しました（役職: ホスト）`, 'success');
       }
     };
 
@@ -2674,6 +2791,8 @@
       }
       state.roomId = roomId;
       state.roomName = groupName || roomId;
+      state.hostUid = '';
+      state.hostName = '';
       state.selectedDate = null;
       state.selectedEventColors = [];
       state.categoryLabels = {};
@@ -2702,6 +2821,8 @@
       const existing = state.recentGroups.find(g => g.id === sanitized);
       state.roomId = sanitized;
       state.roomName = existing ? existing.name : sanitized;
+      state.hostUid = '';
+      state.hostName = '';
       state.selectedDate = null;
       state.selectedEventColors = [];
       state.categoryLabels = {};
@@ -2826,6 +2947,14 @@
           }, { merge: true });
 
           await syncMyRoomMemberDoc(state.roomId);
+
+          if (isCurrentUserHost()) {
+            state.hostName = state.userName;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'roomSettings', state.roomId), {
+              hostName: state.userName,
+              updatedAt: Date.now()
+            }, { merge: true });
+          }
         } catch (err) {
           console.warn('Room profile save error:', err);
         }
@@ -2835,25 +2964,211 @@
 
     function updateProfileUI() {
       document.getElementById('header-user-name').textContent = state.userName;
-      document.getElementById('header-user-role').textContent = state.userRole || '役割未設定';
+      const roleEl = document.getElementById('header-user-role');
+      if (isCurrentUserHost()) {
+        roleEl.innerHTML = `<span class="text-amber-600 dark:text-amber-400 font-bold">👑 ホスト</span>${state.userRole ? `・${escapeHtml(state.userRole)}` : ''}`;
+      } else {
+        roleEl.textContent = state.userRole || '役割未設定';
+      }
       const av = document.getElementById('header-user-avatar');
-      av.className = `w-7 h-7 rounded-lg ${state.userColor} text-white flex items-center justify-center text-xs font-bold shadow-2xs`;
+      av.className = `w-7 h-7 rounded-lg ${state.userColor} text-white flex items-center justify-center text-xs font-bold shadow-2xs shrink-0`;
       av.textContent = state.userName.charAt(0);
     }
 
     function renderActiveMembersBar() {
       const bar = document.getElementById('active-members-bar');
       const candidates = getAllGroupMemberCandidates();
+      const myUid = currentUser ? currentUser.uid : 'me';
 
-      bar.innerHTML = candidates.map(m => `
-        <button onclick="filterByMemberChip('${escapeHtml(m.name)}')"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 dark:hover:bg-zinc-700 text-xs font-medium text-slate-700 dark:text-zinc-200 hover:text-indigo-700 dark:hover:text-indigo-300 border border-slate-200/70 dark:border-zinc-700 transition" title="このメンバーの担当・共同作業タスクで絞り込み">
-          <span class="w-4 h-4 rounded-full ${m.color || 'bg-indigo-600'} text-white text-[9px] font-bold flex items-center justify-center">${escapeHtml(m.name.charAt(0))}</span>
-          <span>${escapeHtml(m.name)}</span>
-          ${m.role ? `<span class="text-[10px] text-slate-400 dark:text-zinc-400 hidden sm:inline">(${escapeHtml(m.role)})</span>` : ''}
-        </button>
-      `).join('');
+      bar.innerHTML = candidates.map(m => {
+        const matchedMember = state.roomMembers.find(rm => rm.name === m.name);
+        const isHost = (matchedMember && matchedMember.uid === state.hostUid) ||
+                       (m.name === state.userName && state.hostUid === myUid) ||
+                       (state.hostName && m.name === state.hostName);
+        return `
+          <button onclick="filterByMemberChip('${escapeHtml(m.name)}')"
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${isHost ? 'bg-amber-50/90 dark:bg-amber-500/15 border-amber-300/80 dark:border-amber-500/40 text-amber-900 dark:text-amber-200' : 'bg-slate-100 dark:bg-zinc-800 border-slate-200/70 dark:border-zinc-700 text-slate-700 dark:text-zinc-200'} hover:bg-indigo-50 dark:hover:bg-zinc-700 text-xs font-medium hover:text-indigo-700 dark:hover:text-indigo-300 border transition" title="${isHost ? '【ホスト】' : ''}このメンバーの担当・共同作業タスクで絞り込み">
+            <span class="w-4 h-4 rounded-full ${m.color || 'bg-indigo-600'} text-white text-[9px] font-bold flex items-center justify-center">${escapeHtml(m.name.charAt(0))}</span>
+            <span>${escapeHtml(m.name)}</span>
+            ${isHost ? `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-amber-500 text-white text-[9px] font-bold shadow-2xs"><i class="fa-solid fa-crown text-[8px]"></i>ホスト</span>` : ''}
+            ${m.role ? `<span class="text-[10px] text-slate-400 dark:text-zinc-400 hidden sm:inline">(${escapeHtml(m.role)})</span>` : ''}
+          </button>
+        `;
+      }).join('');
     }
+
+    // ==========================================
+    // 5.5 メンバー管理・削除・ホスト譲渡機能
+    // ==========================================
+    window.openMembersManageModal = function() {
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
+      renderMembersManageModal();
+      const modal = document.getElementById('members-manage-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    window.closeMembersManageModal = function() {
+      const modal = document.getElementById('members-manage-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    function renderMembersManageModal() {
+      const modal = document.getElementById('members-manage-modal');
+      if (!modal || modal.classList.contains('hidden')) return;
+
+      const banner = document.getElementById('host-status-banner');
+      const listEl = document.getElementById('members-manage-list');
+      const subtitleEl = document.getElementById('members-manage-subtitle');
+      const amHost = isCurrentUserHost();
+      const myUid = currentUser ? currentUser.uid : 'me';
+
+      if (subtitleEl) {
+        subtitleEl.textContent = `グループ「${state.roomName || state.roomId}」の参加メンバー (${state.roomMembers.length}名)`;
+      }
+
+      if (banner) {
+        if (amHost) {
+          banner.className = 'p-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-2';
+          banner.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-crown text-amber-500 text-sm"></i>
+              <span>あなたは現在の<strong>ホスト</strong>です。メンバーの削除やホスト権限の譲渡ができます。</span>
+            </div>
+          `;
+        } else {
+          const hostDisplay = state.hostName || 'グループ作成者';
+          banner.className = 'p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 text-xs flex items-center justify-between gap-2';
+          banner.innerHTML = `
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-slate-400"></i>
+              <span>現在のホスト: <strong class="text-slate-900 dark:text-white">${escapeHtml(hostDisplay)}</strong>（閲覧のみ可能）</span>
+            </div>
+          `;
+        }
+      }
+
+      if (!listEl) return;
+
+      const membersToShow = state.roomMembers.length > 0
+        ? state.roomMembers
+        : [{ uid: myUid, name: state.userName, role: state.userRole, color: state.userColor }];
+
+      listEl.innerHTML = membersToShow.map(m => {
+        const isHost = m.uid === state.hostUid;
+        const isMe = m.uid === myUid;
+        return `
+          <div class="p-3 rounded-xl border ${isHost ? 'border-amber-300/80 dark:border-amber-500/40 bg-amber-50/30 dark:bg-amber-500/5' : 'border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900'} flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl ${m.color || 'bg-indigo-600'} text-white text-xs font-bold flex items-center justify-center shadow-2xs shrink-0">
+                ${escapeHtml((m.name || '?').charAt(0))}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(m.name || '名称未設定')}</span>
+                  ${isMe ? '<span class="px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold">あなた</span>' : ''}
+                  ${isHost ? '<span class="inline-flex items-center gap-1 px-2 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-bold shadow-2xs"><i class="fa-solid fa-crown text-[9px]"></i>ホスト</span>' : '<span class="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 text-[10px] font-medium">メンバー</span>'}
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
+                  ${m.role ? escapeHtml(m.role) : '役割未設定'}
+                </div>
+              </div>
+            </div>
+
+            ${amHost && !isHost ? `
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="confirmTransferHost('${escapeHtml(m.uid)}', '${escapeHtml(m.name || 'メンバー')}')"
+                  class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 transition flex items-center gap-1" title="このメンバーにホスト権限を譲渡する">
+                  <i class="fa-solid fa-crown text-[10px]"></i>
+                  <span>ホスト譲渡</span>
+                </button>
+                <button type="button" onclick="confirmRemoveMember('${escapeHtml(m.uid)}', '${escapeHtml(m.name || 'メンバー')}')"
+                  class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 transition flex items-center gap-1" title="グループからメンバーを削除する">
+                  <i class="fa-solid fa-user-minus text-[10px]"></i>
+                  <span>削除</span>
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.confirmTransferHost = function(targetUid, targetName) {
+      if (!isCurrentUserHost()) {
+        showToast('ホスト権限の譲渡は現在のホストのみ実行できます', 'error');
+        return;
+      }
+      openConfirmModal(
+        `「${targetName}」さんにホスト権限を譲渡しますか？譲渡後、あなたは一般メンバーになり、メンバー削除やホスト管理権限は「${targetName}」さんに移ります。`,
+        async () => {
+          state.hostUid = targetUid;
+          state.hostName = targetName;
+          updateProfileUI();
+          renderActiveMembersBar();
+          renderMembersManageModal();
+
+          if (db && currentUser && state.roomId) {
+            try {
+              const settingsDoc = doc(db, 'artifacts', appId, 'public', 'data', 'roomSettings', state.roomId);
+              await setDoc(settingsDoc, {
+                hostUid: targetUid,
+                hostName: targetName,
+                updatedAt: Date.now()
+              }, { merge: true });
+              showToast(`「${targetName}」さんにホスト権限を譲渡しました`, 'success');
+            } catch (err) {
+              console.error('Transfer host error:', err);
+              showToast('ホスト譲渡の保存中にエラーが発生しました', 'error');
+            }
+          } else {
+            showToast(`「${targetName}」さんにホスト権限を譲渡しました`, 'success');
+          }
+        }
+      );
+    };
+
+    window.confirmRemoveMember = function(targetUid, targetName) {
+      if (!isCurrentUserHost()) {
+        showToast('メンバーの削除はホストのみ実行できます', 'error');
+        return;
+      }
+      if (targetUid === state.hostUid) {
+        showToast('ホスト自身は削除できません。先に別のメンバーへホストを譲渡してください', 'error');
+        return;
+      }
+      openConfirmModal(
+        `「${targetName}」さんをこのグループから削除しますか？削除されたメンバーはグループ画面から退出状態になります。`,
+        async () => {
+          state.roomMembers = state.roomMembers.filter(m => m.uid !== targetUid);
+          renderActiveMembersBar();
+          updateMemberFilterOptions();
+          renderMembersManageModal();
+
+          if (db && currentUser && state.roomId) {
+            try {
+              const memberDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'roomMembers', `${state.roomId}_${targetUid}`);
+              await setDoc(memberDocRef, {
+                roomId: state.roomId,
+                uid: targetUid,
+                removed: true,
+                removedAt: Date.now()
+              }, { merge: true });
+              showToast(`「${targetName}」さんをグループから削除しました`, 'info');
+            } catch (err) {
+              console.error('Remove member error:', err);
+              showToast('メンバーの削除中にエラーが発生しました', 'error');
+            }
+          } else {
+            showToast(`「${targetName}」さんをグループから削除しました`, 'info');
+          }
+        }
+      );
+    };
 
     window.filterByMemberChip = function(name) {
       const sel = document.getElementById('filter-member');
