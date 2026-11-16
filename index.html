@@ -3005,10 +3005,10 @@
         showToast('先にグループを作成または選択してください', 'info');
         return;
       }
-      renderMembersManageModal();
       const modal = document.getElementById('members-manage-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      renderMembersManageModal();
     };
 
     window.closeMembersManageModal = function() {
@@ -3054,9 +3054,23 @@
 
       if (!listEl) return;
 
-      const membersToShow = state.roomMembers.length > 0
-        ? state.roomMembers
-        : [{ uid: myUid, name: state.userName, role: state.userRole, color: state.userColor }];
+      const membersMap = new Map();
+      state.roomMembers.forEach(m => {
+        if (m && m.uid) membersMap.set(m.uid, m);
+      });
+      if (!membersMap.has(myUid) && state.userName) {
+        membersMap.set(myUid, {
+          uid: myUid,
+          name: state.userName,
+          role: state.userRole || '',
+          color: state.userColor || 'bg-indigo-600'
+        });
+      }
+      const membersToShow = Array.from(membersMap.values()).sort((a, b) => {
+        const aHost = a.uid === state.hostUid ? 1 : 0;
+        const bHost = b.uid === state.hostUid ? 1 : 0;
+        return bHost - aHost;
+      });
 
       listEl.innerHTML = membersToShow.map(m => {
         const isHost = m.uid === state.hostUid;
