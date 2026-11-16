@@ -117,6 +117,9 @@
 
     /* モバイルスワイプ連動スライド遷移アニメーション */
     @media (max-width: 1023px) {
+      #workspace-grid-viewport {
+        touch-action: pan-y;
+      }
       #workspace-grid {
         display: flex !important;
         flex-direction: row;
@@ -3640,14 +3643,20 @@
       }, { passive: true });
 
       viewport.addEventListener('touchmove', (e) => {
+        // 一度縦スクロールと判定されたら、指を離すまで横移動は一切させない
         if (swipeMode === 'vertical' || window.innerWidth >= 1024 || !e.touches.length) return;
 
         const dx = e.touches[0].clientX - touchStartX;
         const dy = e.touches[0].clientY - touchStartY;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
 
         if (swipeMode === null) {
-          if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-          if (Math.abs(dx) > Math.abs(dy) * 1.15) {
+          // 初期の微小なブレを無視（12px以上で方向確定）
+          if (absX < 12 && absY < 12) return;
+
+          // 縦の移動を優先判定：横移動が縦移動の1.8倍以上かつ十分な横移動がある場合のみ横スワイプと判定
+          if (absX > absY * 1.8 && absX >= 14) {
             swipeMode = 'horizontal';
           } else {
             swipeMode = 'vertical';
@@ -3655,7 +3664,11 @@
           }
         }
 
+        // 横スワイプ確定中は縦スクロールを完全に止めて真横のみ移動させる
         if (swipeMode === 'horizontal') {
+          if (e.cancelable) {
+            e.preventDefault();
+          }
           currentDeltaX = dx;
           const viewportWidth = viewport.offsetWidth || window.innerWidth;
           const baseOffsetPx = state.mainTab === 'calendar' ? -viewportWidth : 0;
@@ -3668,7 +3681,7 @@
 
           grid.style.transform = `translate3d(${baseOffsetPx + effectiveDx}px, 0, 0)`;
         }
-      }, { passive: true });
+      }, { passive: false });
 
       const finishSwipe = () => {
         if (swipeMode !== 'horizontal' || window.innerWidth >= 1024) {
@@ -3677,7 +3690,7 @@
         }
         swipeMode = null;
         const viewportWidth = viewport.offsetWidth || window.innerWidth;
-        const threshold = Math.min(70, viewportWidth * 0.18);
+        const threshold = Math.min(75, viewportWidth * 0.2);
 
         if (currentDeltaX < -threshold && state.mainTab === 'tasks') {
           switchMainTab('calendar', true);
