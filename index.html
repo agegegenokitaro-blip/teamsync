@@ -3548,6 +3548,56 @@
       syncResponsiveLayout(false);
     });
 
+    // スマートフォン・タブレット幅での左右スワイプによるタブ切り替え（進行中の仕事 ⇔ 共有カレンダー）
+    function initMobileSwipeNavigation() {
+      const swipeArea = document.querySelector('main');
+      if (!swipeArea) return;
+
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isIgnoredTouch = false;
+
+      swipeArea.addEventListener('touchstart', (e) => {
+        if (window.innerWidth >= 1024 || e.touches.length !== 1) {
+          isIgnoredTouch = true;
+          return;
+        }
+        const target = e.target;
+        // レンジスライダー操作や横スクロール要素、モーダル表示中はスワイプ切替を無効化
+        const hasOpenModal = Array.from(document.querySelectorAll('.fixed.inset-0')).some(
+          el => !el.classList.contains('hidden') && el.id !== 'app-splash-screen'
+        );
+        if (hasOpenModal || (target && target.closest('input[type="range"], input, textarea, select'))) {
+          isIgnoredTouch = true;
+          return;
+        }
+
+        isIgnoredTouch = false;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      swipeArea.addEventListener('touchend', (e) => {
+        if (isIgnoredTouch || window.innerWidth >= 1024 || !e.changedTouches.length) return;
+
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+
+        // 縦スクロールとの誤爆を防ぐため、横移動が55px以上かつ縦移動の1.4倍以上の場合のみ反応
+        if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+          if (deltaX < 0 && state.mainTab === 'tasks') {
+            // 左スワイプ → 共有カレンダーへ
+            switchMainTab('calendar');
+            showToast('共有カレンダーに切り替えました', 'info');
+          } else if (deltaX > 0 && state.mainTab === 'calendar') {
+            // 右スワイプ → 進行中の仕事へ
+            switchMainTab('tasks');
+            showToast('進行中の仕事に切り替えました', 'info');
+          }
+        }
+      }, { passive: true });
+    }
+
     function initRoomFromHash() {
       const hash = window.location.hash || '';
       const roomMatch = hash.match(/room=([^&]+)/);
@@ -3580,6 +3630,7 @@
     updateRoomUI();
     updateProfileUI();
     syncResponsiveLayout(true);
+    initMobileSwipeNavigation();
     renderCalendarLegend();
     renderEventCategoryControls();
     renderCalendar();
