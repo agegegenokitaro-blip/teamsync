@@ -154,11 +154,10 @@
     <div class="flex flex-col gap-2.5 sm:gap-3 mb-4 sm:mb-6 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs transition-colors">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
         <div class="flex items-center gap-2 flex-wrap min-w-0">
-          <button type="button" onclick="toggleMembersDrawer()" id="btn-toggle-members-drawer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 transition shrink-0">
+          <button type="button" onclick="openMembersListModal()" id="btn-open-members-modal" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 transition shrink-0">
             <i class="fa-solid fa-users text-[11px]"></i>
-            <span id="toggle-members-btn-label">メンバーを表示する</span>
+            <span>メンバーを表示する</span>
             <span id="members-count-badge" class="px-1.5 py-0.2 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold">0</span>
-            <i id="members-drawer-chevron" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200"></i>
           </button>
           <button onclick="openMembersManageModal()" id="btn-manage-members" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 transition shrink-0" title="メンバー一覧・ホスト管理">
             <i class="fa-solid fa-crown text-[10px] text-amber-500"></i>
@@ -182,13 +181,6 @@
             <i class="fa-regular fa-calendar-plus"></i>
             <span class="truncate">予定追加</span>
           </button>
-        </div>
-      </div>
-
-      <!-- タップで展開するメンバー一覧（最上段：自分 → ホスト → 五十音順） -->
-      <div id="members-drawer" class="hidden pt-2.5 border-t border-slate-100 dark:border-zinc-800">
-        <div id="active-members-bar" class="flex flex-col gap-1.5">
-          <!-- JSでメンバー一覧を描画 -->
         </div>
       </div>
     </div>
@@ -951,6 +943,41 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- モーダル11：参加メンバー一覧表示モーダル（最前面） -->
+  <!-- ========================================== -->
+  <div id="members-list-modal" class="fixed inset-0 bg-slate-900/65 dark:bg-black/80 backdrop-blur-xs z-[55] hidden items-center justify-center p-4" onclick="if(event.target===this) closeMembersListModal()">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-users text-indigo-600 dark:text-indigo-400"></i>
+            <span>参加メンバー一覧</span>
+            <span id="members-modal-count-badge" class="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-extrabold">0人</span>
+          </h3>
+          <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">自分 → ホスト → 五十音順で表示</p>
+        </div>
+        <button type="button" onclick="closeMembersListModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="active-members-bar" class="p-4 overflow-y-auto flex-1 flex flex-col gap-2">
+        <!-- JSでメンバー一覧を描画 -->
+      </div>
+
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/60 dark:bg-zinc-900/90 flex items-center justify-between gap-2">
+        <button type="button" onclick="closeMembersListModal(); openMembersManageModal();" class="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 transition flex items-center gap-1">
+          <i class="fa-solid fa-crown text-[10px] text-amber-500"></i>
+          <span>メンバー管理</span>
+        </button>
+        <button type="button" onclick="closeMembersListModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 dark:bg-zinc-700 hover:bg-slate-700 text-white transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDK & アプリケーションロジック -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1596,6 +1623,7 @@
     function renderActiveMembersBar() {
       const bar = document.getElementById('active-members-bar');
       const countBadge = document.getElementById('members-count-badge');
+      const modalCountBadge = document.getElementById('members-modal-count-badge');
       if (!bar) return;
 
       const myAccountId = getEffectiveAccountId();
@@ -1612,9 +1640,12 @@
       if (countBadge) {
         countBadge.textContent = rawMembers.length;
       }
+      if (modalCountBadge) {
+        modalCountBadge.textContent = `${rawMembers.length}人`;
+      }
 
       if (rawMembers.length === 0) {
-        bar.innerHTML = `<span class="text-xs text-slate-400 dark:text-zinc-500 py-1">グループ未参加</span>`;
+        bar.innerHTML = `<span class="text-xs text-slate-400 dark:text-zinc-500 text-center py-6">グループ未参加</span>`;
         return;
       }
 
@@ -1648,9 +1679,9 @@
         const isHost = state.hostUid && m.uid === state.hostUid;
         const isMe = myAccountId && m.uid === myAccountId;
         return `
-          <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs bg-slate-50/90 dark:bg-zinc-800/80 border ${isMe ? 'border-indigo-300 dark:border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-500/10' : isHost ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50/40 dark:bg-amber-500/5' : 'border-slate-200/80 dark:border-zinc-700/80'}">
+          <div class="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs bg-slate-50/90 dark:bg-zinc-800/80 border ${isMe ? 'border-indigo-300 dark:border-indigo-500/40 bg-indigo-50/50 dark:bg-indigo-500/10' : isHost ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50/40 dark:bg-amber-500/5' : 'border-slate-200/80 dark:border-zinc-700/80'}">
             <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-6 h-6 rounded-lg ${c.bg} text-white flex items-center justify-center text-[11px] font-bold shrink-0 shadow-2xs">${escapeHtml((m.name || 'ゲ').slice(0, 1))}</span>
+              <span class="w-7 h-7 rounded-lg ${c.bg} text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">${escapeHtml((m.name || 'ゲ').slice(0, 1))}</span>
               <span class="font-bold text-slate-800 dark:text-zinc-100 truncate">${escapeHtml(m.name || 'ゲスト')}</span>
               ${isMe ? '<span class="px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold shrink-0">自分</span>' : ''}
               ${isHost ? '<span class="px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 text-[10px] font-bold shrink-0"><i class="fa-solid fa-crown mr-0.5 text-[9px] text-amber-500"></i>ホスト</span>' : ''}
@@ -1661,20 +1692,23 @@
       }).join('');
     }
 
-    window.toggleMembersDrawer = function() {
-      const drawer = document.getElementById('members-drawer');
-      const label = document.getElementById('toggle-members-btn-label');
-      const chevron = document.getElementById('members-drawer-chevron');
-      if (!drawer) return;
+    window.openMembersListModal = function() {
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
+      renderActiveMembersBar();
+      const modal = document.getElementById('members-list-modal');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
 
-      const isHidden = drawer.classList.contains('hidden');
-      drawer.classList.toggle('hidden', !isHidden);
-      if (label) {
-        label.textContent = isHidden ? 'メンバーを閉じる' : 'メンバーを表示する';
-      }
-      if (chevron) {
-        chevron.classList.toggle('rotate-180', isHidden);
-      }
+    window.closeMembersListModal = function() {
+      const modal = document.getElementById('members-list-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
     };
 
     function updateMemberFilterOptions() {
