@@ -11,10 +11,10 @@
   <title>TeamSync - グループ業務進捗＆共有カレンダー</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Inter & Noto Sans JP -->
+  <!-- Google Fonts: Inter, Noto Sans JP & Plus Jakarta Sans (ロゴ用) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script>
@@ -70,9 +70,70 @@
     .dark input[type="time"]::-webkit-calendar-picker-indicator {
       filter: invert(1);
     }
+
+    /* 起動画面（スプラッシュ）TeamSync 1秒ロゴアニメーション */
+    #app-splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background-color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.45s ease;
+    }
+    #app-splash-screen.splash-hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-char-stroke {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 800;
+      font-size: 132px;
+      letter-spacing: -0.03em;
+      fill: url(#splashTeamSyncGrad);
+      fill-opacity: 0;
+      stroke: url(#splashTeamSyncGrad);
+      stroke-width: 3.5px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 520;
+      stroke-dashoffset: 520;
+      animation:
+        splashWriteStroke 0.56s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+        splashFillLetter 0.36s ease-out forwards;
+      animation-delay: var(--d), calc(var(--d) + 0.24s);
+    }
+    @keyframes splashWriteStroke {
+      0% { stroke-dashoffset: 520; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes splashFillLetter {
+      0% { fill-opacity: 0; stroke-width: 3.5px; }
+      100% { fill-opacity: 1; stroke-width: 0px; }
+    }
   </style>
 </head>
 <body class="bg-slate-100/80 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 antialiased min-h-dvh w-full max-w-full overflow-x-hidden flex flex-col transition-colors duration-300 selection:bg-indigo-500 selection:text-white">
+
+  <!-- 起動画面：TeamSync 1秒ロゴアニメーション -->
+  <div id="app-splash-screen" aria-hidden="true">
+    <svg class="w-full max-w-[680px] h-auto max-h-[220px] overflow-visible" viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TeamSync">
+      <defs>
+        <linearGradient id="splashTeamSyncGrad" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#0284ff" />
+          <stop offset="35%" stop-color="#2563eb" />
+          <stop offset="68%" stop-color="#5b3df5" />
+          <stop offset="100%" stop-color="#6d14b8" />
+        </linearGradient>
+      </defs>
+      <text x="50%" y="142" text-anchor="middle">
+        <tspan class="splash-char-stroke" style="--d: 0.00s;">T</tspan><tspan class="splash-char-stroke" style="--d: 0.06s;">e</tspan><tspan class="splash-char-stroke" style="--d: 0.12s;">a</tspan><tspan class="splash-char-stroke" style="--d: 0.18s;">m</tspan><tspan class="splash-char-stroke" style="--d: 0.24s;">S</tspan><tspan class="splash-char-stroke" style="--d: 0.30s;">y</tspan><tspan class="splash-char-stroke" style="--d: 0.36s;">n</tspan><tspan class="splash-char-stroke" style="--d: 0.42s;">c</tspan>
+      </text>
+    </svg>
+  </div>
 
   <!-- トースト通知コンテナ -->
   <div id="toast-container" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 flex flex-col items-center sm:items-end gap-2 pointer-events-none"></div>
@@ -1248,7 +1309,6 @@
     }
 
     function initPersistentAccountId() {
-      // 1. URLハッシュに引継ぎ用 uid=... が含まれていれば最優先で保存・適用
       const hash = window.location.hash || '';
       const uidMatch = hash.match(/uid=([a-zA-Z0-9_-]+)/);
       if (uidMatch && uidMatch[1]) {
@@ -1259,7 +1319,6 @@
         return;
       }
 
-      // 2. ローカルストレージに保存済みのIDがあれば復元
       try {
         const saved = localStorage.getItem('teamsync_persistent_account_id');
         if (saved) {
@@ -1268,7 +1327,6 @@
         }
       } catch (e) {}
 
-      // 3. 初回アクセス時は固定アカウントIDを生成して保存
       const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let newId = 'acc_';
       for (let i = 0; i < 20; i++) {
@@ -1438,7 +1496,6 @@
       const basePath = getRoomBasePath(roomId);
       const myAccountId = getEffectiveAccountId();
 
-      // ルームメタ情報監視（グループ名・ホストUID・回復コード・カスタム色名）
       const metaRef = doc(db, `${basePath}/rooms`, roomId);
       if (options.isNewlyCreated && myAccountId) {
         const newRecoveryCode = generateHostRecoveryCode();
@@ -1479,7 +1536,6 @@
           state.hostTakeoverRequest = data.hostTakeoverRequest || null;
           state.customCategoryLabels = data.customCategoryLabels || {};
 
-          // 既存グループで回復コードが未発行の場合はホスト接続時に自動発行
           if (!state.hostRecoveryCode && isCurrentUserHost() && isFirebaseReady && db) {
             const generated = generateHostRecoveryCode();
             state.hostRecoveryCode = generated;
@@ -1501,7 +1557,6 @@
       });
       state.unsubscribers.push(unsubMeta);
 
-      // メンバー一覧監視
       const qMembers = query(collection(db, `${basePath}/members`), where('roomId', '==', roomId));
       const unsubMembers = onSnapshot(qMembers, (snapshot) => {
         const list = [];
@@ -1550,7 +1605,6 @@
       });
       state.unsubscribers.push(unsubMembers);
 
-      // タスク一覧監視
       const qTasks = query(collection(db, `${basePath}/tasks`), where('roomId', '==', roomId));
       const unsubTasks = onSnapshot(qTasks, (snapshot) => {
         const list = [];
@@ -1564,7 +1618,6 @@
       });
       state.unsubscribers.push(unsubTasks);
 
-      // カレンダー予定監視
       const qEvents = query(collection(db, `${basePath}/events`), where('roomId', '==', roomId));
       const unsubEvents = onSnapshot(qEvents, (snapshot) => {
         const list = [];
@@ -1826,7 +1879,6 @@
         `;
       }).join('');
 
-      // 緊急ホスト引き継ぎ申請（同意投票）パネル
       const req = state.hostTakeoverRequest;
       if (takeoverBox) {
         if (req && req.candidateUid) {
@@ -3013,7 +3065,6 @@
       });
     };
 
-    // 色名カスタマイズモーダル
     window.openCategoryLabelsModal = function() {
       if (!state.roomId) {
         showToast('先にグループを作成または選択してください', 'info');
@@ -3431,8 +3482,18 @@
     };
 
     // ==========================================
-    // 7. アプリ起動 & 画面幅フィット制御 & 自動アップデート検知
+    // 7. アプリ起動 & 画面幅フィット制御 & 自動アップデート検知 & スプラッシュ
     // ==========================================
+    function hideSplashScreenAfterAnimation() {
+      const splash = document.getElementById('app-splash-screen');
+      if (!splash) return;
+      // 1秒の記述アニメーション完了後に滑らかにフェードアウト
+      setTimeout(() => {
+        splash.classList.add('splash-hide');
+        setTimeout(() => splash.remove(), 500);
+      }, 1350);
+    }
+
     let initialHtmlSnapshot = null;
     let isCheckingAppUpdate = false;
 
@@ -3503,6 +3564,7 @@
       }
     }
 
+    hideSplashScreenAfterAnimation();
     loadGroupHistory();
     initPersistentAccountId();
     initTheme();
