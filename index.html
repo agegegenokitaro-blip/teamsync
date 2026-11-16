@@ -1318,6 +1318,22 @@
       try {
         const memberDocId = `${roomId}_${myAccountId}`;
         const memberRef = doc(db, `${getRoomBasePath(roomId)}/members`, memberDocId);
+        const existingSnap = await getDoc(memberRef);
+
+        if (existingSnap.exists()) {
+          const existingData = existingSnap.data();
+          // 既にサーバー側に名前が登録されており、ローカル側が初期状態（ゲスト）の場合はサーバー側のプロフィールを復元
+          if (existingData.name && existingData.name !== 'ゲスト' && (!state.profile.name || state.profile.name === 'ゲスト')) {
+            state.profile = {
+              name: existingData.name,
+              role: existingData.role || '',
+              color: existingData.color || 'indigo'
+            };
+            saveRoomProfileLocal();
+            updateProfileUI();
+          }
+        }
+
         await setDoc(memberRef, {
           roomId,
           uid: myAccountId,
@@ -1347,9 +1363,22 @@
           createdAt: Date.now(),
           updatedAt: Date.now()
         }, { merge: true });
+      } else {
+        // 先にメタ情報と既存メンバー情報を読み込んでホスト権限・プロフィールを確定させる
+        try {
+          const initialMetaSnap = await getDoc(metaRef);
+          if (initialMetaSnap.exists()) {
+            const data = initialMetaSnap.data();
+            state.roomName = data.name || roomId;
+            state.hostUid = data.hostUid || '';
+            state.customCategoryLabels = data.customCategoryLabels || {};
+          }
+        } catch (e) {}
       }
 
       await syncMyRoomMemberDoc(roomId);
+      updateRoomUI();
+      updateProfileUI();
 
       const unsubMeta = onSnapshot(metaRef, (snap) => {
         if (snap.exists()) {
@@ -2951,11 +2980,52 @@
       input.value = '';
       updateUrlHashState();
 
-      if (state.roomId) {
-        await verifyAndEnterRoom(state.roomId);
+      // 引継ぎ先アカウントが所属・ホストしているグループをデータベースから検索して履歴・現在グループへ反映
+      let targetRoomId = state.roomId;
+      if (isFirebaseReady && db) {
+        try {
+          const basePath = getRoomBasePath('');
+          const qMyMembers = query(collection(db, `${basePath}/members`), where('uid', '==', newUid));
+          const memberSnaps = await getDocs(qMyMembers);
+          const foundRoomIds = [];
+          memberSnaps.forEach(d => {
+            const mData = d.data();
+            if (mData && mData.roomId) {
+              foundRoomIds.push(mData.roomId);
+              if (mData.name && mData.name !== 'ゲスト') {
+                localStorage.setItem(`teamsync_profile_${mData.roomId}`, JSON.stringify({
+                  name: mData.name,
+                  role: mData.role || '',
+                  color: mData.color || 'indigo'
+                }));
+                localStorage.setItem('teamsync_last_username', mData.name);
+              }
+            }
+          });
+
+          for (const rId of foundRoomIds) {
+            const rSnap = await getDoc(doc(db, `${basePath}/rooms`, rId));
+            const rName = rSnap.exists() ? (rSnap.data().name || rId) : rId;
+            saveGroupToHistory(rId, rName);
+          }
+
+          if (!targetRoomId && foundRoomIds.length > 0) {
+            targetRoomId = foundRoomIds[0];
+          }
+        } catch (e) {
+          console.error('importAccountUid lookup error:', e);
+        }
       }
+
       closeProfileModal();
-      showToast('アカウントを引き継ぎました！');
+      closeCreateGroupModal();
+
+      if (targetRoomId) {
+        await verifyAndEnterRoom(targetRoomId);
+        updateProfileUI();
+        renderActiveMembersBar();
+      }
+      showToast('アカウント情報と権限を引き継ぎました！');
     };
 
     window.saveProfile = async function(e) {
