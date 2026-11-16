@@ -181,24 +181,21 @@
     <div id="workspace-grid" class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
       
       <!-- ========================================== -->
-      <!-- 左カラム：現在進行中の仕事（ワークスペース） -->
+      <!-- 左カラム：現在進行中の仕事ボード           -->
       <!-- ========================================== -->
-      <section id="section-tasks" class="lg:col-span-7 flex flex-col gap-4 min-w-0">
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs p-3.5 sm:p-5 transition-colors">
-          <!-- セクションヘッダー & フィルター -->
-          <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+      <section id="section-tasks" class="lg:col-span-7 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs overflow-hidden transition-colors">
+        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex flex-col gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-xs shadow-indigo-500/50"></span>
-                現在進行中の仕事ボード
+                <i class="fa-solid fa-rocket text-indigo-600 dark:text-indigo-400"></i>
+                <span>現在進行中の仕事</span>
               </h2>
-              <p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">メンバーのリアルタイムな作業状況と進捗率</p>
+              <p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">メンバーの作業内容・進捗率・共同作業者をリアルタイム共有</p>
             </div>
-
-            <!-- 表示切替（カード一覧 / カンバン） -->
-            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-transparent dark:border-zinc-700/60">
+            <div class="flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-700">
               <button onclick="setTaskViewMode('cards')" id="btn-view-cards" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition">
-                <i class="fa-solid fa-grip mr-1"></i>カード
+                <i class="fa-solid fa-grip-vertical mr-1"></i>カード
               </button>
               <button onclick="setTaskViewMode('kanban')" id="btn-view-kanban" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition">
                 <i class="fa-solid fa-table-columns mr-1"></i>ステータス別
@@ -206,123 +203,109 @@
             </div>
           </div>
 
-          <!-- フィルターバー -->
-          <div class="flex flex-wrap items-center gap-2 py-3">
-            <!-- ステータスフィルター -->
-            <select id="filter-status" onchange="renderTasks()" class="text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 font-medium text-slate-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+          <!-- フィルター・検索バー -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <select id="filter-status" onchange="renderTasks()" class="text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
               <option value="ALL">すべてのステータス</option>
-              <option value="進行中">🔵 進行中</option>
-              <option value="レビュー待ち">🟡 レビュー待ち</option>
-              <option value="一時停止">⚪ 一時停止</option>
-              <option value="完了">🟢 完了</option>
+              <option value="進行中">進行中</option>
+              <option value="レビュー待ち">レビュー待ち</option>
+              <option value="一時停止">一時停止</option>
+              <option value="完了">完了</option>
             </select>
-
-            <!-- メンバーフィルター -->
-            <select id="filter-member" onchange="renderTasks()" class="text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 font-medium text-slate-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+            <select id="filter-member" onchange="renderTasks()" class="text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
               <option value="ALL">すべてのメンバー</option>
             </select>
-
-            <!-- 検索ボックス -->
-            <div class="relative flex-1 min-w-[140px]">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 text-xs"></i>
-              <input type="text" id="filter-search" oninput="renderTasks()" placeholder="タスクやタグを検索..." class="w-full text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-xl pl-8 pr-3 py-1.5 text-slate-700 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass text-[11px] text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="filter-search" oninput="renderTasks()" placeholder="キーワード・#タグで検索..." class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
             </div>
           </div>
+        </div>
 
-          <!-- タスク一覧コンテナ -->
-          <div id="tasks-container" class="mt-2">
-            <!-- JSで動的に描画 -->
-            <div class="text-center py-12 text-slate-400 dark:text-zinc-500 text-sm">
-              <i class="fa-solid fa-spinner fa-spin text-xl mb-2 text-indigo-500"></i>
-              <p>データを同期しています...</p>
-            </div>
-          </div>
+        <!-- タスク一覧描画エリア -->
+        <div id="tasks-container" class="p-4 sm:p-5">
+          <!-- JSでタスクカードまたはカンバンを描画 -->
         </div>
       </section>
 
       <!-- ========================================== -->
-      <!-- 右カラム：今後の予定共有カレンダー           -->
+      <!-- 右カラム：共有カレンダー & 今後の予定      -->
       <!-- ========================================== -->
-      <section id="section-calendar" class="lg:col-span-5 flex flex-col gap-4 min-w-0">
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs p-3.5 sm:p-5 transition-colors">
-          <!-- カレンダーヘッダー -->
-          <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-zinc-800">
+      <section id="section-calendar" class="lg:col-span-5 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-zinc-800 shadow-xs overflow-hidden transition-colors">
+        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex flex-col gap-3">
+          <div class="flex items-center justify-between gap-2">
             <div>
               <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50"></span>
-                共有スケジュール
+                <i class="fa-regular fa-calendar-days text-emerald-600 dark:text-emerald-400"></i>
+                <span>共有スケジュール</span>
               </h2>
-              <p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">日付をクリックしてグループの予定を追加</p>
+              <p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">日付をタップでその日の予定を時間順に表示</p>
             </div>
             <div class="flex items-center gap-1">
-              <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-300 transition" title="前月">
-                <i class="fa-solid fa-chevron-left text-xs"></i>
+              <button onclick="changeMonth(-1)" class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center text-xs transition" title="前月">
+                <i class="fa-solid fa-chevron-left"></i>
               </button>
-              <button onclick="goToToday()" class="px-2.5 h-8 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-zinc-200 transition">
+              <span id="calendar-month-label" class="text-xs sm:text-sm font-bold text-slate-800 dark:text-white px-2 min-w-[92px] text-center">2026年 11月</span>
+              <button onclick="changeMonth(1)" class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 flex items-center justify-center text-xs transition" title="翌月">
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+              <button onclick="goToToday()" class="ml-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold transition">
                 今日
               </button>
-              <button onclick="changeMonth(1)" class="w-8 h-8 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-300 transition" title="翌月">
-                <i class="fa-solid fa-chevron-right text-xs"></i>
-              </button>
             </div>
           </div>
 
-          <!-- 年月表示 -->
-          <div class="flex flex-wrap items-center justify-between gap-2 my-3">
-            <h3 id="calendar-month-label" class="text-base font-bold text-slate-800 dark:text-white tracking-tight">2026年 11月</h3>
-            <button onclick="openCategoryLabelsModal()" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 border border-slate-200/80 dark:border-zinc-700 transition flex items-center gap-1 shrink-0" title="このグループの10色のラベル名を変更">
-              <i class="fa-solid fa-palette text-indigo-500 dark:text-indigo-400"></i>
-              <span>色名編集</span>
-            </button>
-          </div>
-
-          <!-- 10色フィルターバー（複数選択可能） -->
-          <div class="mb-3 bg-slate-50/90 dark:bg-zinc-800/50 p-2 rounded-xl border border-slate-200/70 dark:border-zinc-800">
-            <div class="flex items-center justify-between mb-1.5 px-0.5">
-              <span class="text-[10px] font-semibold text-slate-500 dark:text-zinc-400 flex items-center gap-1">
-                <i class="fa-solid fa-filter text-[9px] text-emerald-600 dark:text-emerald-400"></i>
-                <span>色で絞り込み（複数選択可）</span>
+          <!-- 10色カラーフィルター＆ラベル編集 -->
+          <div class="bg-slate-50/90 dark:bg-zinc-800/60 p-2.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/70 flex flex-col gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1">
+                <i class="fa-solid fa-filter text-[10px] text-indigo-500"></i>
+                <span>色分け絞り込み（複数選択可）</span>
               </span>
-              <button id="btn-reset-color-filter" onclick="clearEventColorFilter()" class="hidden text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
-                選択解除（すべて表示）
-              </button>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="btn-reset-color-filter" onclick="clearEventColorFilter()" class="hidden px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-300 text-[10px] font-bold hover:bg-rose-100 transition">
+                  絞り込み解除
+                </button>
+                <button type="button" onclick="openCategoryLabelsModal()" class="px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 hover:bg-indigo-50 dark:hover:bg-zinc-700 text-indigo-600 dark:text-indigo-300 border border-slate-200 dark:border-zinc-700 text-[10px] font-bold transition flex items-center gap-1">
+                  <i class="fa-solid fa-pen text-[9px]"></i>
+                  <span>色名編集</span>
+                </button>
+              </div>
             </div>
-            <div id="calendar-legend" class="flex flex-wrap items-center gap-1.5 text-[11px]">
-              <!-- JSで10色の複数選択フィルターチップを動的描画 -->
+            <div id="calendar-legend" class="flex flex-wrap gap-1">
+              <!-- JSで10色チップを描画 -->
             </div>
           </div>
+        </div>
 
-          <!-- 曜日ヘッダー -->
-          <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 dark:text-zinc-400 pb-2">
+        <!-- カレンダー本体 -->
+        <div class="p-3 sm:p-4">
+          <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold mb-1.5">
             <div class="text-rose-500 dark:text-rose-400">日</div>
-            <div>月</div>
-            <div>火</div>
-            <div>水</div>
-            <div>木</div>
-            <div>金</div>
+            <div class="text-slate-500 dark:text-zinc-400">月</div>
+            <div class="text-slate-500 dark:text-zinc-400">火</div>
+            <div class="text-slate-500 dark:text-zinc-400">水</div>
+            <div class="text-slate-500 dark:text-zinc-400">木</div>
+            <div class="text-slate-500 dark:text-zinc-400">金</div>
             <div class="text-indigo-500 dark:text-indigo-400">土</div>
           </div>
-
-          <!-- カレンダーグリッド（ダークモード時は黒〜濃灰色基調＋白文字） -->
-          <div id="calendar-grid" class="grid grid-cols-7 gap-0.5 sm:gap-1 bg-slate-100 dark:bg-black/80 p-1 sm:p-1.5 rounded-xl border border-slate-200/70 dark:border-zinc-800">
-            <!-- JSでカレンダーマスを描画 -->
+          <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+            <!-- JSでカレンダーマス目を描画 -->
           </div>
+        </div>
 
-          <!-- 選択した日 / 直近の予定リスト -->
-          <div class="mt-5 pt-4 border-t border-slate-100 dark:border-zinc-800">
-            <div class="flex items-center justify-between mb-3">
-              <h4 id="upcoming-events-title" class="text-xs font-bold text-slate-700 dark:text-zinc-200 flex items-center gap-1.5">
-                <i class="fa-regular fa-clock text-emerald-600 dark:text-emerald-400"></i>
-                今後の予定一覧
-              </h4>
-              <button id="btn-clear-date-filter" onclick="clearSelectedDate()" class="hidden text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
-                すべての今後の予定を表示
-              </button>
-            </div>
-
-            <div id="events-list-container" class="flex flex-col gap-2 max-h-[340px] overflow-y-auto pr-1">
-              <!-- JSで予定リストを描画 -->
-            </div>
+        <!-- 今後の予定一覧 -->
+        <div class="p-4 sm:p-5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <h3 id="upcoming-events-title" class="text-xs font-bold text-slate-700 dark:text-zinc-200 flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-emerald-600 dark:text-emerald-400"></i> 今後の予定一覧
+            </h3>
+            <button id="btn-clear-date-filter" onclick="clearSelectedDate()" class="hidden text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+              全期間に戻す
+            </button>
+          </div>
+          <div id="events-list-container" class="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-0.5">
+            <!-- JSで予定カードを描画 -->
           </div>
         </div>
       </section>
@@ -331,10 +314,10 @@
   </main>
 
   <!-- ========================================== -->
-  <!-- モーダル1：現在の仕事（タスク）追加・編集     -->
+  <!-- モーダル1：現在の仕事・進捗報告の登録/編集 -->
   <!-- ========================================== -->
-  <div id="task-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-40 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+  <div id="task-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeTaskModal()">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <h3 id="task-modal-title" class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <i class="fa-solid fa-briefcase text-indigo-600 dark:text-indigo-400"></i>
@@ -344,102 +327,89 @@
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      
-      <form id="task-form" onsubmit="saveTask(event)" class="p-5 flex flex-col gap-4 max-h-[82vh] overflow-y-auto">
+
+      <form id="task-form" onsubmit="saveTask(event)" class="p-5 flex flex-col gap-3.5 overflow-y-auto">
         <input type="hidden" id="task-id">
 
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">作業タイトル <span class="text-rose-500">*</span></label>
+          <input type="text" id="task-title" required placeholder="例：トップページのデザイン修正・API連携" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">主担当者 <span class="text-rose-500">*</span></label>
-            <input type="text" id="task-member" required placeholder="例: 佐藤 健太" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">主担当者 <span class="text-rose-500">*</span></label>
+            <input type="text" id="task-member" required placeholder="担当者名" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">ステータス</label>
-            <select id="task-status" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-              <option value="進行中">🔵 進行中</option>
-              <option value="レビュー待ち">🟡 レビュー待ち</option>
-              <option value="一時停止">⚪ 一時停止</option>
-              <option value="完了">🟢 完了</option>
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">ステータス</label>
+            <select id="task-status" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+              <option value="進行中">進行中</option>
+              <option value="レビュー待ち">レビュー待ち</option>
+              <option value="一時停止">一時停止</option>
+              <option value="完了">完了</option>
             </select>
           </div>
         </div>
 
-        <!-- 共同作業者（複数選択）セクション -->
-        <div class="bg-indigo-50/50 dark:bg-indigo-950/30 p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
+        <!-- 共同作業者選択 -->
+        <div class="bg-slate-50 dark:bg-zinc-800/70 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-700">
           <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-semibold text-slate-700 dark:text-zinc-200 flex items-center gap-1.5">
-              <i class="fa-solid fa-user-group text-indigo-600 dark:text-indigo-400"></i>
-              <span>共同作業者（一緒に進めているメンバー）</span>
-            </label>
+            <label class="text-xs font-bold text-slate-700 dark:text-zinc-200">共同作業メンバー（複数選択可）</label>
             <span id="task-collab-count" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">0人選択中</span>
           </div>
-          <div id="task-collaborators-selector" class="flex flex-wrap gap-1.5 mb-2.5">
-            <!-- JSでグループメンバーチップを描画 -->
-          </div>
+          <div id="task-collaborators-selector" class="flex flex-wrap gap-1.5 mb-2"></div>
           <div class="flex gap-1.5">
-            <input type="text" id="custom-task-collab-input" placeholder="リストにない共同作業者名を追加..." class="flex-1 text-xs bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTaskCollaborator();}">
-            <button type="button" onclick="addCustomTaskCollaborator()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-indigo-50 dark:hover:bg-zinc-700 text-indigo-600 dark:text-indigo-400 text-xs font-semibold transition shrink-0">
-              + 追加
-            </button>
+            <input type="text" id="custom-task-collab-input" placeholder="メンバー名を手動追加..." class="flex-1 text-xs rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white px-2.5 py-1.5 focus:outline-none">
+            <button type="button" onclick="addCustomTaskCollaborator()" class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-xs font-semibold text-slate-700 dark:text-zinc-200">追加</button>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">現在行っている仕事（タイトル） <span class="text-rose-500">*</span></label>
-          <input type="text" id="task-title" required placeholder="例: LPデザインカンプの作成・確認" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">作業詳細・共有メモ</label>
-          <textarea id="task-desc" rows="3" placeholder="現在の進み具合や、他のメンバーに共有したい事項を記入してください" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"></textarea>
-        </div>
-
-        <!-- 進捗率スライダー -->
-        <div class="bg-slate-50 dark:bg-zinc-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/80">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-semibold text-slate-700 dark:text-zinc-300">現在の進捗率</label>
-            <span id="task-progress-label" class="text-sm font-bold text-indigo-600 dark:text-indigo-400">50%</span>
+          <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">
+            <span>現在の進捗率</span>
+            <span id="task-progress-label" class="text-indigo-600 dark:text-indigo-400 font-extrabold">30%</span>
           </div>
-          <input type="range" id="task-progress" min="0" max="100" step="5" value="50" oninput="document.getElementById('task-progress-label').textContent = this.value + '%'" class="w-full cursor-pointer">
-          <div class="flex justify-between text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
-            <span>0% (着手)</span>
-            <span>50% (半分)</span>
-            <span>100% (完了)</span>
-          </div>
+          <input type="range" id="task-progress" min="0" max="100" step="5" value="30" oninput="document.getElementById('task-progress-label').textContent = this.value + '%'" class="w-full cursor-pointer">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">優先度</label>
-            <select id="task-priority" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-              <option value="高">🔥 高（最優先）</option>
-              <option value="中" selected>⚡ 中（通常）</option>
-              <option value="低">🌱 低（余裕あり）</option>
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">優先度</label>
+            <select id="task-priority" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2.5 focus:outline-none">
+              <option value="中">⚡ 中</option>
+              <option value="高">🔥 高</option>
+              <option value="低">🌱 低</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">カテゴリ / タグ</label>
-            <input type="text" id="task-tag" placeholder="例: デザイン, 企画, 開発" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">タグ（任意）</label>
+            <input type="text" id="task-tag" placeholder="例：UI改修, 営業資料" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none">
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
-          <button type="button" onclick="closeTaskModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition">キャンセル</button>
-          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-sm transition">保存して共有</button>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">詳細メモ・共有事項</label>
+          <textarea id="task-desc" rows="3" placeholder="現在の状況や、他のメンバーに共有したい詳細・相談事項を記入..." class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+          <button type="button" onclick="closeTaskModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">キャンセル</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm">保存して共有</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル2：仕事の詳細 ＆ コメントスレッド     -->
+  <!-- モーダル2：仕事の詳細＆コメントスレッド    -->
   <!-- ========================================== -->
-  <div id="task-detail-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-40 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+  <div id="task-detail-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeTaskDetailModal()">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[88vh]">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <div class="flex items-center gap-2">
-          <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">進行中</span>
-          <span id="detail-priority-badge" class="text-xs text-slate-500 dark:text-zinc-400">優先度: 中</span>
+          <span id="detail-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">進行中</span>
+          <span id="detail-priority-badge" class="text-xs font-semibold text-slate-500 dark:text-zinc-400">優先度: 中</span>
         </div>
         <button onclick="closeTaskDetailModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
           <i class="fa-solid fa-xmark"></i>
@@ -448,22 +418,17 @@
 
       <div class="p-5 overflow-y-auto flex-1 flex flex-col gap-4">
         <div>
-          <h3 id="detail-title" class="text-lg font-bold text-slate-900 dark:text-white leading-snug">タスクタイトル</h3>
-          <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500 dark:text-zinc-400">
-            <span class="flex items-center gap-1"><i class="fa-regular fa-user text-indigo-500 dark:text-indigo-400"></i> <span id="detail-member" class="font-medium text-slate-700 dark:text-zinc-200">担当者</span></span>
-            <span class="flex items-center gap-1"><i class="fa-regular fa-clock"></i> <span id="detail-updated">更新日時</span></span>
+          <h3 id="detail-title" class="text-base font-bold text-slate-900 dark:text-white leading-snug">タイトル</h3>
+          <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-zinc-400 mt-1.5">
+            <span><i class="fa-regular fa-user mr-1"></i>主担当: <strong id="detail-member" class="text-slate-700 dark:text-zinc-200">メンバー</strong></span>
+            <span>・更新: <span id="detail-updated">たった今</span></span>
           </div>
-          <!-- 共同作業者リスト表示 -->
-          <div id="detail-collaborators-wrap" class="hidden flex flex-wrap items-center gap-1.5 mt-2.5"></div>
+          <div id="detail-collaborators-wrap" class="hidden flex flex-wrap items-center gap-1.5 mt-2"></div>
         </div>
 
-        <div class="bg-slate-50 dark:bg-zinc-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/70 text-sm text-slate-700 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed" id="detail-desc">
-          詳細内容
-        </div>
-
-        <div>
-          <div class="flex justify-between text-xs font-semibold mb-1">
-            <span class="text-slate-600 dark:text-zinc-400">進捗状況</span>
+        <div class="bg-slate-50 dark:bg-zinc-800/80 p-3 rounded-xl border border-slate-100 dark:border-zinc-700/70">
+          <div class="flex justify-between text-xs font-bold mb-1.5">
+            <span class="text-slate-600 dark:text-zinc-300">進捗状況</span>
             <span id="detail-progress-text" class="text-indigo-600 dark:text-indigo-400">0%</span>
           </div>
           <div class="w-full bg-slate-200 dark:bg-zinc-700 rounded-full h-2 overflow-hidden">
@@ -471,20 +436,21 @@
           </div>
         </div>
 
-        <!-- コメント一覧 -->
-        <div class="border-t border-slate-100 dark:border-zinc-800 pt-4">
-          <h4 class="text-xs font-bold text-slate-700 dark:text-zinc-200 mb-3 flex items-center gap-1.5">
-            <i class="fa-regular fa-comments text-indigo-500 dark:text-indigo-400"></i>
-            メンバーからのコメント (<span id="detail-comment-count">0</span>)
+        <div>
+          <h4 class="text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">詳細メモ</h4>
+          <p id="detail-desc" class="text-xs text-slate-600 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed bg-slate-50/70 dark:bg-zinc-800/50 p-3 rounded-xl border border-slate-100 dark:border-zinc-800"></p>
+        </div>
+
+        <!-- コメントエリア -->
+        <div class="border-t border-slate-100 dark:border-zinc-800 pt-3">
+          <h4 class="text-xs font-bold text-slate-700 dark:text-zinc-200 mb-2.5 flex items-center gap-1.5">
+            <i class="fa-regular fa-comments text-indigo-500"></i>
+            <span>コメント・連絡スレッド (<span id="detail-comment-count">0</span>)</span>
           </h4>
-          <div id="detail-comments-list" class="flex flex-col gap-2.5 max-h-48 overflow-y-auto mb-3">
-            <!-- JSで描画 -->
-          </div>
+          <div id="detail-comments-list" class="flex flex-col gap-2 max-h-48 overflow-y-auto mb-3"></div>
           <form onsubmit="submitTaskComment(event)" class="flex gap-2">
-            <input type="text" id="new-comment-input" required placeholder="コメントやアドバイスを入力..." class="flex-1 text-xs bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-            <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shrink-0">
-              送信
-            </button>
+            <input type="text" id="new-comment-input" required placeholder="コメントや確認事項を入力..." class="flex-1 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+            <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shrink-0">送信</button>
           </form>
         </div>
       </div>
@@ -492,10 +458,10 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル3：カレンダー予定（イベント）追加・編集 -->
+  <!-- モーダル3：カレンダー予定の追加・編集      -->
   <!-- ========================================== -->
-  <div id="event-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-40 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden">
+  <div id="event-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeEventModal()">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <h3 id="event-modal-title" class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <i class="fa-regular fa-calendar-plus text-emerald-600 dark:text-emerald-400"></i>
@@ -506,92 +472,71 @@
         </button>
       </div>
 
-      <form id="event-form" onsubmit="saveEvent(event)" class="p-5 flex flex-col gap-4 max-h-[82vh] overflow-y-auto">
+      <form id="event-form" onsubmit="saveEvent(event)" class="p-5 flex flex-col gap-3.5 overflow-y-auto">
         <input type="hidden" id="event-id">
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">予定タイトル <span class="text-rose-500">*</span></label>
-          <input type="text" id="event-title" required placeholder="例: 週次定例ミーティング / クライアント納品日" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">予定タイトル <span class="text-rose-500">*</span></label>
+          <input type="text" id="event-title" required placeholder="例：定例ミーティング・クライアント提出日" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">日付 <span class="text-rose-500">*</span></label>
-            <input type="date" id="event-date" required class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">日付 <span class="text-rose-500">*</span></label>
+            <input type="date" id="event-date" required class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2.5 focus:outline-none">
           </div>
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300">時間</label>
-              <label class="flex items-center gap-1 text-[11px] text-slate-500 dark:text-zinc-400 cursor-pointer">
-                <input type="checkbox" id="event-allday" onchange="toggleEventTimeInput()" class="rounded text-emerald-600 focus:ring-emerald-500">
-                終日
+              <label class="text-xs font-bold text-slate-700 dark:text-zinc-200">開始時刻</label>
+              <label class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-zinc-300 cursor-pointer">
+                <input type="checkbox" id="event-allday" onchange="toggleEventTimeInput()" class="rounded text-emerald-600">
+                <span>終日</span>
               </label>
             </div>
-            <input type="time" id="event-time" value="10:00" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+            <input type="time" id="event-time" value="10:00" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2.5 focus:outline-none">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">代表担当者 / 作成者</label>
-            <input type="text" id="event-member" placeholder="例: 全員 / 田中" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300">カテゴリ色（10色）</label>
-              <button type="button" onclick="openCategoryLabelsModal()" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-                <i class="fa-solid fa-pen text-[9px]"></i>色名を変更
-              </button>
-            </div>
-            <select id="event-category" onchange="updateEventCategoryPreview()" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
-              <!-- JSで10色の選択肢を動的描画 -->
-            </select>
-          </div>
-        </div>
-
-        <!-- 10色クイックカラーパレット -->
-        <div class="bg-slate-50 dark:bg-zinc-800/75 p-2.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/70">
+        <!-- 10色カラー分類選択 -->
+        <div>
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">カラーパレット選択:</span>
-            <span id="selected-event-color-badge" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-700">ブルー</span>
+            <label class="text-xs font-bold text-slate-700 dark:text-zinc-200">カラー分類（10色）</label>
+            <span id="selected-event-color-badge" class="px-2 py-0.5 rounded-md text-[10px] font-bold border">ブルー</span>
           </div>
-          <div id="event-color-palette" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
-            <!-- JSで10色ボタンを描画 -->
-          </div>
+          <div id="event-color-palette" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 mb-2"></div>
+          <select id="event-category" onchange="updateEventCategoryPreview()" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2 focus:outline-none"></select>
         </div>
 
-        <!-- カレンダー予定の参加メンバー複数選択 -->
-        <div class="bg-emerald-50/60 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-100 dark:border-emerald-500/20">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">登録者・代表担当</label>
+          <input type="text" id="event-member" placeholder="登録者名" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none">
+        </div>
+
+        <!-- 参加メンバー選択 -->
+        <div class="bg-slate-50 dark:bg-zinc-800/70 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-700">
           <div class="flex items-center justify-between mb-2">
-            <label class="text-xs font-semibold text-slate-700 dark:text-zinc-200 flex items-center gap-1.5">
-              <i class="fa-solid fa-users text-emerald-600 dark:text-emerald-400"></i>
-              <span>参加・関係メンバー（複数選択可）</span>
-            </label>
-            <span id="event-collab-count" class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">0人選択中</span>
+            <label class="text-xs font-bold text-slate-700 dark:text-zinc-200">参加・関係メンバー（複数選択可）</label>
+            <span id="event-collab-count" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">0人選択中</span>
           </div>
-          <div id="event-collaborators-selector" class="flex flex-wrap gap-1.5 mb-2">
-            <!-- JSでメンバーチップ描画 -->
-          </div>
+          <div id="event-collaborators-selector" class="flex flex-wrap gap-1.5 mb-2"></div>
           <div class="flex gap-1.5">
-            <input type="text" id="custom-event-collab-input" placeholder="参加者名を手動追加..." class="flex-1 text-xs bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomEventCollaborator();}">
-            <button type="button" onclick="addCustomEventCollaborator()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-emerald-50 dark:hover:bg-zinc-700 text-emerald-700 dark:text-emerald-400 text-xs font-semibold transition shrink-0">
-              + 追加
-            </button>
+            <input type="text" id="custom-event-collab-input" placeholder="メンバー名を手動追加..." class="flex-1 text-xs rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white px-2.5 py-1.5 focus:outline-none">
+            <button type="button" onclick="addCustomEventCollaborator()" class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 dark:hover:bg-zinc-600 text-xs font-semibold text-slate-700 dark:text-zinc-200">追加</button>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">メモ・URLなど</label>
-          <textarea id="event-memo" rows="2" placeholder="会議リンクや持ち物、補足事項など" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"></textarea>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">メモ・場所・URL</label>
+          <textarea id="event-memo" rows="2" placeholder="会議リンクや持ち物、補足事項など..." class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2 focus:outline-none"></textarea>
         </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800">
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800">
           <button type="button" id="btn-delete-event" onclick="deleteCurrentEvent()" class="hidden px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition">
             <i class="fa-regular fa-trash-can mr-1"></i>削除
           </button>
-          <div class="flex items-center gap-2 ml-auto">
-            <button type="button" onclick="closeEventModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition">キャンセル</button>
-            <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm transition">予定を保存</button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" onclick="closeEventModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">キャンセル</button>
+            <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm">予定を保存</button>
           </div>
         </div>
       </form>
@@ -599,68 +544,111 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル4：グループルームID設定               -->
+  <!-- モーダル4：新規グループ作成                -->
   <!-- ========================================== -->
-  <div id="room-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-40 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden">
+  <div id="create-group-modal" class="fixed inset-0 bg-slate-900/65 dark:bg-black/80 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-gradient-to-r from-indigo-50/80 to-violet-50/80 dark:from-zinc-900 dark:to-zinc-900">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-folder-plus text-indigo-600 dark:text-indigo-400"></i>
+            <span>新しいグループを作成</span>
+          </h3>
+          <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">作成者には自動的に「👑 ホスト」役職が付与されます</p>
+        </div>
+        <button id="btn-close-create-group" onclick="closeCreateGroupModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="submitCreateGroup(event)" class="p-5 flex flex-col gap-3.5 overflow-y-auto">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">グループ名 <span class="text-rose-500">*</span></label>
+          <input type="text" id="create-group-name" required placeholder="例：開発チームA / 文化祭実行委員会" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-bold text-slate-700 dark:text-zinc-200">グループID（半角英数字） <span class="text-rose-500">*</span></label>
+            <button type="button" onclick="regenerateCreateGroupId()" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+              <i class="fa-solid fa-dice mr-0.5"></i>再生成
+            </button>
+          </div>
+          <input type="text" id="create-group-id" required pattern="[a-zA-Z0-9_-]+" placeholder="team-2026" class="w-full font-mono text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">あなたの表示名 <span class="text-rose-500">*</span></label>
+            <input type="text" id="create-group-user-name" required placeholder="例：山田 太郎" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">役割・担当（任意）</label>
+            <input type="text" id="create-group-user-role" placeholder="例：リーダー / 進行管理" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+          </div>
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-zinc-300 cursor-pointer bg-slate-50 dark:bg-zinc-800/80 p-2.5 rounded-xl border border-slate-200/70 dark:border-zinc-700">
+          <input type="checkbox" id="create-group-copy-link" checked class="rounded text-indigo-600">
+          <span>作成と同時に招待リンクをクリップボードにコピーする</span>
+        </label>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 gap-2">
+          <button type="button" onclick="closeCreateGroupModal(); openRoomModal();" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+            既存IDで参加する →
+          </button>
+          <div class="flex gap-2">
+            <button type="button" id="btn-cancel-create-group" onclick="closeCreateGroupModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">キャンセル</button>
+            <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-sm">グループ作成</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- モーダル4.5：グループ切替・招待参加        -->
+  <!-- ========================================== -->
+  <div id="room-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeRoomModal()">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[88vh]">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <i class="fa-solid fa-people-group text-indigo-600 dark:text-indigo-400"></i>
-          <span>グループ切り替え・参加・共有</span>
+          <span>グループの切り替え・参加</span>
         </h3>
         <button onclick="closeRoomModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="p-5 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
-        <!-- 新規グループ作成バナー -->
-        <div class="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl p-3.5 text-white flex items-center justify-between gap-3 shadow-sm">
-          <div>
-            <p class="text-xs font-bold flex items-center gap-1.5">
-              <i class="fa-solid fa-sparkles"></i> 新しいグループを作る
-            </p>
-            <p class="text-[11px] text-indigo-100 mt-0.5">専用の仕事ボードと共有カレンダーを新規作成します</p>
+
+      <div class="p-5 flex flex-col gap-4 overflow-y-auto">
+        <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/70 dark:border-indigo-500/30 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">現在のグループ</div>
+            <div id="modal-current-room-name" class="text-sm font-bold text-slate-900 dark:text-white truncate">グループ未選択</div>
+            <div class="text-[11px] font-mono text-slate-500 dark:text-zinc-400">ID: <span id="modal-current-room">---</span></div>
           </div>
-          <button type="button" onclick="closeRoomModal(); openCreateGroupModal();" class="px-3 py-2 rounded-xl bg-white text-indigo-700 hover:bg-indigo-50 text-xs font-bold shrink-0 shadow-xs transition">
-            + 新規作成
+          <button type="button" onclick="copyRoomLink()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-indigo-200 dark:border-indigo-500/30 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 shrink-0">
+            <i class="fa-regular fa-copy mr-1"></i>招待コピー
           </button>
         </div>
 
-        <p class="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed">
-          既存のグループに参加する場合は、共有された<strong class="text-slate-900 dark:text-white">グループID（ルームコード）</strong>を入力してください。
-        </p>
+        <div id="recent-groups-section" class="hidden flex flex-col gap-1.5">
+          <div class="text-xs font-bold text-slate-700 dark:text-zinc-200">参加・作成したグループ履歴</div>
+          <div id="recent-groups-list" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto"></div>
+        </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">既存のグループIDで参加（半角英数字・ハイフン）</label>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">既存のグループIDを入力して参加</label>
           <div class="flex gap-2">
-            <input type="text" id="input-room-id" placeholder="例: sales-team-2026" class="flex-1 text-sm font-mono bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-            <button type="button" onclick="applyRoomId()" class="px-3.5 py-2 rounded-xl bg-slate-800 dark:bg-zinc-700 hover:bg-slate-700 dark:hover:bg-zinc-600 text-white text-xs font-semibold shrink-0 transition">
-              参加する
-            </button>
+            <input type="text" id="input-room-id" placeholder="例：team-1234" class="flex-1 font-mono text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+            <button type="button" onclick="applyRoomId()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shrink-0">入室する</button>
           </div>
         </div>
 
-        <!-- 最近利用した・作成したグループ一覧 -->
-        <div id="recent-groups-section" class="hidden">
-          <label class="block text-[11px] font-bold text-slate-500 dark:text-zinc-400 mb-1.5">参加・作成したグループ履歴（ワンクリック切替）</label>
-          <div id="recent-groups-list" class="flex flex-col gap-1.5 max-h-36 overflow-y-auto">
-            <!-- JSで描画 -->
-          </div>
-        </div>
-
-        <div class="bg-indigo-50/70 dark:bg-indigo-950/40 p-3 rounded-xl border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-between gap-2">
-          <div class="text-xs text-indigo-900 dark:text-indigo-200 min-w-0">
-            <div class="font-bold truncate" id="modal-current-room-name">未選択</div>
-            <div class="text-[11px] opacity-80">ID: <span id="modal-current-room" class="font-mono font-bold">---</span></div>
-          </div>
-          <button type="button" onclick="copyRoomLink()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-zinc-700 text-xs font-semibold hover:bg-indigo-50 dark:hover:bg-zinc-700 transition shrink-0">
-            招待リンクをコピー
-          </button>
-        </div>
-
-        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
-          <button type="button" onclick="closeRoomModal(); openProfileModal();" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-            <i class="fa-regular fa-id-badge"></i> このグループでのプロフィール編集
+        <div class="pt-2 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+          <button type="button" onclick="closeRoomModal(); openCreateGroupModal();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-xs font-bold text-indigo-600 dark:text-indigo-300 transition">
+            + 新しいグループを作成
           </button>
           <button type="button" onclick="closeRoomModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">閉じる</button>
         </div>
@@ -669,126 +657,59 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル4B：新規グループ作成（初期スタート画面） -->
+  <!-- モーダル5：グループ別プロフィール設定      -->
   <!-- ========================================== -->
-  <div id="create-group-modal" class="fixed inset-0 bg-slate-900/75 dark:bg-black/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
-        <div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <i class="fa-solid fa-folder-plus text-indigo-600 dark:text-indigo-400"></i>
-            <span>新しいグループを作成</span>
-          </h3>
-          <p id="create-group-subtitle" class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">まずは作業を共有するグループを作成しましょう</p>
-        </div>
-        <button id="btn-close-create-group" onclick="closeCreateGroupModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <form onsubmit="submitCreateGroup(event)" class="p-5 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">グループ名 <span class="text-rose-500">*</span></label>
-          <input type="text" id="create-group-name" required maxlength="30" placeholder="例: 営業1課 プロジェクトチーム" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">グループID（共有用コード・半角英数字） <span class="text-rose-500">*</span></label>
-          <div class="flex gap-2">
-            <input type="text" id="create-group-id" required maxlength="32" placeholder="例: sales-team-8492" class="flex-1 text-sm font-mono bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-            <button type="button" onclick="regenerateCreateGroupId()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-medium text-slate-600 dark:text-zinc-300 shrink-0" title="IDを再生成">
-              <i class="fa-solid fa-shuffle"></i> 自動生成
-            </button>
-          </div>
-          <p class="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">※このIDまたは共有URLをメンバーに送ると同じグループに参加できます</p>
-        </div>
-
-        <div class="bg-slate-50 dark:bg-zinc-800/70 p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-700/70 flex flex-col gap-3">
-          <div class="text-xs font-bold text-slate-700 dark:text-zinc-200 flex items-center gap-1.5">
-            <i class="fa-regular fa-id-card text-indigo-500 dark:text-indigo-400"></i>
-            <span>このグループでのあなたのプロフィール</span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 dark:text-zinc-300 mb-1">表示名 <span class="text-rose-500">*</span></label>
-              <input type="text" id="create-group-user-name" required maxlength="20" placeholder="例: 山田 太郎" class="w-full text-xs bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-600 dark:text-zinc-300 mb-1">役割・担当（任意）</label>
-              <input type="text" id="create-group-user-role" maxlength="24" placeholder="例: リーダー" class="w-full text-xs bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
-            </div>
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2 text-xs text-slate-600 dark:text-zinc-300 cursor-pointer select-none">
-          <input type="checkbox" id="create-group-copy-link" checked class="rounded text-indigo-600 focus:ring-indigo-500">
-          <span>作成と同時に招待リンクをクリップボードにコピーする</span>
-        </label>
-
-        <div class="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
-          <button type="button" onclick="closeCreateGroupModal(); openRoomModal();" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-            <i class="fa-solid fa-right-to-bracket"></i> 既存IDで参加する
-          </button>
-          <div class="flex items-center gap-2">
-            <button type="button" id="btn-cancel-create-group" onclick="closeCreateGroupModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">キャンセル</button>
-            <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-sm">グループを作成して開始</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- モーダル5：グループ別プロフィール設定モーダル -->
-  <!-- ========================================== -->
-  <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+  <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeProfileModal()">
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <i class="fa-regular fa-id-card text-indigo-600 dark:text-indigo-400"></i>
-            <span>グループ専用プロフィール設定</span>
+            <span>プロフィール設定</span>
           </h3>
           <p class="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-            現在のグループ <span id="profile-modal-room-badge" class="font-mono font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/20 px-1.5 py-0.5 rounded">未選択</span> での表示設定
+            グループ <span id="profile-modal-room-badge" class="font-mono font-bold text-indigo-600 dark:text-indigo-300">未選択</span> での表示名
           </p>
         </div>
         <button onclick="closeProfileModal()" class="w-8 h-8 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 flex items-center justify-center text-slate-500 dark:text-zinc-400 transition">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <form onsubmit="saveProfile(event)" class="p-5 flex flex-col gap-4">
+
+      <form onsubmit="saveProfile(event)" class="p-5 flex flex-col gap-3.5">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">このグループでの表示名 <span class="text-rose-500">*</span></label>
-          <input type="text" id="input-profile-name" required maxlength="20" placeholder="例: 佐藤 健太" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">表示名 <span class="text-rose-500">*</span></label>
+          <input type="text" id="input-profile-name" required placeholder="あなたの名前・ニックネーム" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
         </div>
+
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">役割・担当パート（任意）</label>
-          <input type="text" id="input-profile-role" maxlength="24" placeholder="例: デザイン担当 / プロジェクトリーダー" class="w-full text-sm bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-1">役割・担当パート（任意）</label>
+          <input type="text" id="input-profile-role" placeholder="例：フロントエンド担当 / 企画" class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-900 dark:text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
         </div>
+
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">アバターカラー</label>
-          <div class="flex flex-wrap gap-2" id="avatar-color-picker">
-            <!-- JSで生成 -->
-          </div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-zinc-200 mb-2">アイコンカラー</label>
+          <div id="avatar-color-picker" class="flex flex-wrap gap-2"></div>
         </div>
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
           <button type="button" onclick="closeProfileModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800">キャンセル</button>
-          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm">このグループに保存</button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm">保存する</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル6：カスタム削除確認ダイアログ         -->
+  <!-- モーダル6：カスタム確認ダイアログ         -->
   <!-- ========================================== -->
-  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+  <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-[60] hidden items-center justify-center p-4">
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-sm p-5">
-      <div class="flex items-center gap-3 text-rose-600 dark:text-rose-400 mb-2">
-        <div class="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+      <div id="confirm-header" class="flex items-center gap-3 text-rose-600 dark:text-rose-400 mb-2">
+        <div id="confirm-icon-wrap" class="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center">
+          <i id="confirm-icon" class="fa-solid fa-triangle-exclamation"></i>
         </div>
-        <h3 class="text-base font-bold text-slate-900 dark:text-white">削除の確認</h3>
+        <h3 id="confirm-title" class="text-base font-bold text-slate-900 dark:text-white">削除の確認</h3>
       </div>
       <p id="confirm-message" class="text-xs text-slate-600 dark:text-zinc-400 leading-relaxed mb-5">この項目を削除してもよろしいですか？この操作は取り消せません。</p>
       <div class="flex justify-end gap-2">
@@ -3142,6 +3063,11 @@
           } else {
             showToast(`「${targetName}」さんにホスト権限を譲渡しました`, 'success');
           }
+        },
+        {
+          title: 'ホスト権限の譲渡',
+          confirmText: '譲渡する',
+          variant: 'amber'
         }
       );
     };
@@ -3201,8 +3127,33 @@
 
     // カスタム確認モーダル
     let confirmCallback = null;
-    function openConfirmModal(message, onConfirm) {
+    function openConfirmModal(message, onConfirm, options = {}) {
+      const title = options.title || '削除の確認';
+      const confirmText = options.confirmText || '削除する';
+      const variant = options.variant || 'danger';
+
+      document.getElementById('confirm-title').textContent = title;
       document.getElementById('confirm-message').textContent = message;
+
+      const headerEl = document.getElementById('confirm-header');
+      const iconWrapEl = document.getElementById('confirm-icon-wrap');
+      const iconEl = document.getElementById('confirm-icon');
+      const execBtn = document.getElementById('btn-confirm-execute');
+
+      execBtn.textContent = confirmText;
+
+      if (variant === 'amber') {
+        headerEl.className = 'flex items-center gap-3 text-amber-600 dark:text-amber-400 mb-2';
+        iconWrapEl.className = 'w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center';
+        iconEl.className = 'fa-solid fa-crown';
+        execBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-white shadow-xs';
+      } else {
+        headerEl.className = 'flex items-center gap-3 text-rose-600 dark:text-rose-400 mb-2';
+        iconWrapEl.className = 'w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center';
+        iconEl.className = 'fa-solid fa-triangle-exclamation';
+        execBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white';
+      }
+
       confirmCallback = onConfirm;
       const modal = document.getElementById('confirm-modal');
       modal.classList.remove('hidden');
