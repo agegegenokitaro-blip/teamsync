@@ -825,10 +825,10 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- モーダル9：参加メンバー管理・ホスト権限譲渡 -->
+  <!-- モーダル9：参加メンバー管理・ホスト権限譲渡・回復 -->
   <!-- ========================================== -->
   <div id="members-manage-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs z-50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeMembersManageModal()">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[88vh]">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-900">
         <div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -846,8 +846,43 @@
         <div id="host-status-banner" class="p-3 rounded-xl border text-xs flex items-center gap-2">
           <!-- JSでホスト権限ステータスを描画 -->
         </div>
+
+        <!-- ホスト用：緊急回復コード表示 -->
+        <div id="host-recovery-display-box" class="hidden p-3 rounded-xl border border-amber-200/80 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10 flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-[10px] font-bold text-amber-800 dark:text-amber-300">ホスト緊急回復コード（端末紛失・ログイン不能時の予備キー）</div>
+            <div id="host-recovery-code-text" class="font-mono text-sm font-extrabold tracking-widest text-slate-900 dark:text-white mt-0.5">------</div>
+          </div>
+          <button type="button" onclick="copyHostRecoveryCode()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-500/30 text-[11px] font-bold text-amber-800 dark:text-amber-300 hover:bg-amber-100 shrink-0">
+            <i class="fa-regular fa-copy mr-1"></i>コピー
+          </button>
+        </div>
+
         <div id="members-manage-list" class="flex flex-col gap-2">
           <!-- JSでメンバー一覧・削除・ホスト譲渡ボタンを描画 -->
+        </div>
+
+        <!-- 進行中のホスト緊急引き継ぎ申請・同意投票パネル -->
+        <div id="host-takeover-request-box" class="hidden mt-1 p-3.5 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50/90 dark:bg-amber-500/10 flex flex-col gap-2.5">
+          <!-- JSで立候補者・必要同意数・同意ボタンを描画 -->
+        </div>
+
+        <!-- 一般メンバー用：ホストログイン不能時の緊急引き継ぎ・回復コード入力 -->
+        <div id="host-recovery-claim-box" class="hidden mt-1 p-3.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 flex flex-col gap-2.5">
+          <div class="text-xs font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-1.5">
+            <i class="fa-solid fa-key text-amber-500"></i>
+            <span>ホストがログイン不能になった場合</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-zinc-400 leading-relaxed">
+            ホストの端末故障などで操作できなくなった場合、事前共有された「回復コード」を入力するか、他メンバーの同意（5人以上:3人 / 4人:2人 / 3人:1人）を得て新しいホストを引き継げます。
+          </p>
+          <div class="flex gap-1.5">
+            <input type="text" id="input-host-recovery-code" maxlength="10" placeholder="回復コード（6桁）を入力..." class="flex-1 font-mono text-xs uppercase rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white px-2.5 py-1.5 focus:outline-none">
+            <button type="button" onclick="claimHostByRecoveryCode()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shrink-0">回復実行</button>
+          </div>
+          <button type="button" id="btn-emergency-claim-host" onclick="confirmEmergencyClaimHost()" class="w-full py-2 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50/80 dark:bg-amber-500/15 hover:bg-amber-100 dark:hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-bold transition">
+            <i class="fa-solid fa-crown mr-1 text-amber-500"></i>自分が新しいホストを引き継ぐ（緊急対応）
+          </button>
         </div>
       </div>
 
@@ -954,6 +989,8 @@
       roomId: '',
       roomName: '',
       hostUid: '',
+      hostRecoveryCode: '',
+      hostTakeoverRequest: null,
       profile: {
         name: 'ゲスト',
         role: '',
@@ -1049,6 +1086,15 @@
         id += chars[Math.floor(Math.random() * chars.length)];
       }
       return id;
+    }
+
+    function generateHostRecoveryCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
     }
 
     function loadGroupHistory() {
@@ -1322,7 +1368,6 @@
 
         if (existingSnap.exists()) {
           const existingData = existingSnap.data();
-          // 既にサーバー側に名前が登録されており、ローカル側が初期状態（ゲスト）の場合はサーバー側のプロフィールを復元
           if (existingData.name && existingData.name !== 'ゲスト' && (!state.profile.name || state.profile.name === 'ゲスト')) {
             state.profile = {
               name: existingData.name,
@@ -1352,25 +1397,29 @@
       const basePath = getRoomBasePath(roomId);
       const myAccountId = getEffectiveAccountId();
 
-      // ルームメタ情報監視（グループ名・ホストUID・カスタム色名）
+      // ルームメタ情報監視（グループ名・ホストUID・回復コード・カスタム色名）
       const metaRef = doc(db, `${basePath}/rooms`, roomId);
       if (options.isNewlyCreated && myAccountId) {
+        const newRecoveryCode = generateHostRecoveryCode();
+        state.hostRecoveryCode = newRecoveryCode;
         await setDoc(metaRef, {
           roomId,
           name: state.roomName || roomId,
           hostUid: myAccountId,
+          hostRecoveryCode: newRecoveryCode,
           customCategoryLabels: state.customCategoryLabels || {},
           createdAt: Date.now(),
           updatedAt: Date.now()
         }, { merge: true });
       } else {
-        // 先にメタ情報と既存メンバー情報を読み込んでホスト権限・プロフィールを確定させる
         try {
           const initialMetaSnap = await getDoc(metaRef);
           if (initialMetaSnap.exists()) {
             const data = initialMetaSnap.data();
             state.roomName = data.name || roomId;
             state.hostUid = data.hostUid || '';
+            state.hostRecoveryCode = data.hostRecoveryCode || '';
+            state.hostTakeoverRequest = data.hostTakeoverRequest || null;
             state.customCategoryLabels = data.customCategoryLabels || {};
           }
         } catch (e) {}
@@ -1380,12 +1429,22 @@
       updateRoomUI();
       updateProfileUI();
 
-      const unsubMeta = onSnapshot(metaRef, (snap) => {
+      const unsubMeta = onSnapshot(metaRef, async (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           state.roomName = data.name || roomId;
           state.hostUid = data.hostUid || '';
+          state.hostRecoveryCode = data.hostRecoveryCode || '';
+          state.hostTakeoverRequest = data.hostTakeoverRequest || null;
           state.customCategoryLabels = data.customCategoryLabels || {};
+
+          // 既存グループで回復コードが未発行の場合はホスト接続時に自動発行
+          if (!state.hostRecoveryCode && isCurrentUserHost() && isFirebaseReady && db) {
+            const generated = generateHostRecoveryCode();
+            state.hostRecoveryCode = generated;
+            updateDoc(metaRef, { hostRecoveryCode: generated }).catch(() => {});
+          }
+
           saveGroupToHistory(roomId, state.roomName);
           updateRoomUI();
           updateProfileUI();
@@ -1409,7 +1468,6 @@
         state.members = list;
 
         const currentMyId = getEffectiveAccountId();
-        // 既存メンバーに自分のデータがあればプロフィールを同期（別端末・ホーム画面引き継ぎ時用）
         const myExistingMember = list.find(m => m.uid === currentMyId);
         if (myExistingMember && myExistingMember.name && myExistingMember.name !== 'ゲスト' && state.profile.name === 'ゲスト') {
           state.profile = {
@@ -1421,7 +1479,6 @@
           updateProfileUI();
         }
 
-        // 自分がホストによって削除された場合のリアルタイム検知
         if (currentMyId && !options.isNewlyCreated && list.length > 0) {
           const amIStillMember = list.some(m => m.uid === currentMyId);
           if (!amIStillMember && state.hostUid && state.hostUid !== currentMyId) {
@@ -1482,7 +1539,7 @@
     }
 
     // ==========================================
-    // 4. UI 更新・メンバー表示・ホスト管理
+    // 4. UI 更新・メンバー表示・ホスト管理・緊急引き継ぎ
     // ==========================================
     function updateRoomUI() {
       const nameEl = document.getElementById('display-room-name');
@@ -1575,7 +1632,7 @@
       }
     }
 
-    // メンバー管理・ホスト譲渡モーダル
+    // メンバー管理・ホスト譲渡・回復モーダル
     window.openMembersManageModal = function() {
       if (!state.roomId) {
         showToast('先にグループを作成または選択してください', 'info');
@@ -1597,6 +1654,11 @@
       const banner = document.getElementById('host-status-banner');
       const listEl = document.getElementById('members-manage-list');
       const subtitleEl = document.getElementById('members-manage-subtitle');
+      const recoveryDisplayBox = document.getElementById('host-recovery-display-box');
+      const recoveryCodeText = document.getElementById('host-recovery-code-text');
+      const takeoverBox = document.getElementById('host-takeover-request-box');
+      const recoveryClaimBox = document.getElementById('host-recovery-claim-box');
+      const emergencyBtn = document.getElementById('btn-emergency-claim-host');
       if (!banner || !listEl) return;
 
       const myUid = getEffectiveAccountId();
@@ -1612,18 +1674,90 @@
         });
       }
 
+      const totalCount = membersList.length;
+      const requiredApprovals = getRequiredHostTakeoverApprovals(totalCount);
+
       if (subtitleEl) {
-        subtitleEl.textContent = `${state.roomName || state.roomId}（参加メンバー ${membersList.length}名）`;
+        subtitleEl.textContent = `${state.roomName || state.roomId}（参加メンバー ${totalCount}名）`;
       }
 
       if (amIHost) {
         banner.className = 'p-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2';
         banner.innerHTML = `<i class="fa-solid fa-crown text-amber-500 text-sm shrink-0"></i><span>あなたは<strong>ホスト</strong>です。メンバーの削除やホスト権限の譲渡が行えます。</span>`;
+        if (recoveryDisplayBox) recoveryDisplayBox.classList.remove('hidden');
+        if (recoveryCodeText) recoveryCodeText.textContent = state.hostRecoveryCode || '発行中...';
+        if (recoveryClaimBox) recoveryClaimBox.classList.add('hidden');
       } else {
         const hostMember = membersList.find(m => m.uid === state.hostUid);
-        const hostName = hostMember ? hostMember.name : 'グループ作成者';
+        const hostName = hostMember ? hostMember.name : '不在（未登録）';
         banner.className = 'p-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 text-xs flex items-center gap-2';
-        banner.innerHTML = `<i class="fa-solid fa-shield-halved text-indigo-500 shrink-0"></i><span>現在のホスト: <strong>${escapeHtml(hostName)}</strong>（メンバー管理はホストのみ実行できます）</span>`;
+        banner.innerHTML = `<i class="fa-solid fa-shield-halved text-indigo-500 shrink-0"></i><span>現在のホスト: <strong>${escapeHtml(hostName)}</strong></span>`;
+        if (recoveryDisplayBox) recoveryDisplayBox.classList.add('hidden');
+        if (recoveryClaimBox) recoveryClaimBox.classList.remove('hidden');
+        if (emergencyBtn) {
+          emergencyBtn.innerHTML = requiredApprovals > 0
+            ? `<i class="fa-solid fa-crown mr-1 text-amber-500"></i>自分が新しいホストを引き継ぐ（他メンバー${requiredApprovals}人の同意が必要）`
+            : `<i class="fa-solid fa-crown mr-1 text-amber-500"></i>自分が新しいホストを引き継ぐ（緊急対応）`;
+        }
+      }
+
+      // 進行中の緊急ホスト引き継ぎ申請（同意投票）の表示制御
+      const req = state.hostTakeoverRequest;
+      if (takeoverBox) {
+        if (req && req.candidateUid && req.candidateUid !== state.hostUid) {
+          const validMemberUids = new Set(membersList.map(m => m.uid));
+          const approvals = Array.isArray(req.approvals)
+            ? req.approvals.filter(u => u !== req.candidateUid && validMemberUids.has(u))
+            : [];
+          const reqNeeded = getRequiredHostTakeoverApprovals(totalCount);
+          const isCandidate = myUid === req.candidateUid;
+          const hasApproved = approvals.includes(myUid);
+          const approverNames = approvals.map(u => {
+            const hit = membersList.find(m => m.uid === u);
+            return hit ? hit.name : 'メンバー';
+          });
+
+          takeoverBox.classList.remove('hidden');
+          takeoverBox.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
+                <i class="fa-solid fa-hand-sparkles text-amber-500"></i>
+                <span>ホスト緊急引き継ぎの申請中</span>
+              </div>
+              <span class="px-2 py-0.5 rounded-full bg-amber-200/80 dark:bg-amber-500/30 text-amber-950 dark:text-amber-100 text-[11px] font-extrabold">
+                同意 ${approvals.length} / ${reqNeeded}人
+              </span>
+            </div>
+            <p class="text-[11px] text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
+              <strong>${escapeHtml(req.candidateName || 'メンバー')}</strong> さんが新しいホストへの引き継ぎを申請しています（現在 ${totalCount}名グループのため、他メンバー <strong>${reqNeeded}人</strong> の同意で交代します）。
+            </p>
+            ${approverNames.length > 0 ? `
+              <div class="text-[10px] text-amber-800 dark:text-amber-300 bg-white/70 dark:bg-zinc-900/60 px-2.5 py-1.5 rounded-lg">
+                <i class="fa-solid fa-check-double mr-1 text-emerald-600"></i>同意済み: ${escapeHtml(approverNames.join('、'))}
+              </div>
+            ` : ''}
+            <div class="flex items-center gap-2 pt-0.5">
+              ${isCandidate ? `
+                <span class="flex-1 text-[11px] font-semibold text-amber-800 dark:text-amber-300">他のメンバーの同意を待っています...</span>
+                <button type="button" onclick="cancelHostTakeoverRequest()" class="px-3 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-600 text-slate-600 dark:text-zinc-300 text-[11px] font-bold hover:bg-slate-100 shrink-0">
+                  申請を取り下げる
+                </button>
+              ` : `
+                <button type="button" onclick="toggleApproveHostTakeover()" class="flex-1 py-2 rounded-lg text-xs font-bold transition shadow-2xs ${hasApproved ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500 text-white'}">
+                  ${hasApproved ? '<i class="fa-solid fa-check mr-1"></i>同意済み（タップで取消）' : '<i class="fa-solid fa-thumbs-up mr-1"></i>この人のホスト引き継ぎに同意する'}
+                </button>
+                ${amIHost ? `
+                  <button type="button" onclick="cancelHostTakeoverRequest()" class="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold shrink-0">
+                    却下
+                  </button>
+                ` : ''}
+              `}
+            </div>
+          `;
+        } else {
+          takeoverBox.classList.add('hidden');
+          takeoverBox.innerHTML = '';
+        }
       }
 
       listEl.innerHTML = membersList.map(m => {
@@ -1660,6 +1794,184 @@
           </div>
         `;
       }).join('');
+    }
+
+    window.copyHostRecoveryCode = function() {
+      if (!state.hostRecoveryCode) return;
+      copyTextToClipboard(state.hostRecoveryCode);
+      showToast('ホスト緊急回復コードをコピーしました');
+    };
+
+    window.claimHostByRecoveryCode = async function() {
+      const input = document.getElementById('input-host-recovery-code');
+      const entered = (input?.value || '').trim().toUpperCase();
+      if (!entered) {
+        showToast('回復コードを入力してください', 'info');
+        return;
+      }
+      if (!state.hostRecoveryCode || entered !== state.hostRecoveryCode.toUpperCase()) {
+        showToast('回復コードが一致しません', 'error');
+        return;
+      }
+      await promoteSelfToHost('回復コード認証によりホスト権限を引き継ぎました！');
+      if (input) input.value = '';
+    };
+
+    window.confirmEmergencyClaimHost = function() {
+      const myUid = getEffectiveAccountId();
+      const validMemberUids = new Set(state.members.map(m => m.uid));
+      if (myUid) validMemberUids.add(myUid);
+      const totalMembers = validMemberUids.size;
+      const requiredApprovals = getRequiredHostTakeoverApprovals(totalMembers);
+
+      if (requiredApprovals <= 0) {
+        openConfirmModal(
+          '元のホストが端末紛失やログイン不能などで操作できない状態ですか？\n「引き継ぐ」を押すと、あなたのアカウントが新しいホストに設定されます。',
+          async () => {
+            await promoteSelfToHost('緊急引き継ぎにより新しいホストになりました！');
+          },
+          {
+            title: 'ホスト権限の緊急引き継ぎ',
+            confirmText: '引き継ぐ',
+            variant: 'host'
+          }
+        );
+        return;
+      }
+
+      openConfirmModal(
+        `現在のグループ人数は ${totalMembers}人 のため、新しいホストになるには他のメンバー ${requiredApprovals}人 の同意が必要です。\nホスト引き継ぎを申請しますか？`,
+        async () => {
+          await startHostTakeoverRequest(requiredApprovals);
+        },
+        {
+          title: 'ホスト引き継ぎの申請（同意投票）',
+          confirmText: '申請する',
+          variant: 'host'
+        }
+      );
+    };
+
+    function getRequiredHostTakeoverApprovals(memberCount) {
+      if (memberCount >= 5) return 3;
+      if (memberCount === 4) return 2;
+      if (memberCount === 3) return 1;
+      return 0;
+    }
+
+    async function startHostTakeoverRequest(requiredApprovals) {
+      const myUid = getEffectiveAccountId();
+      if (!isFirebaseReady || !db || !state.roomId || !myUid) return;
+      try {
+        const reqPayload = {
+          candidateUid: myUid,
+          candidateName: state.profile.name || 'ゲスト',
+          approvals: [],
+          createdAt: Date.now()
+        };
+        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+        await setDoc(metaRef, {
+          roomId: state.roomId,
+          name: state.roomName || state.roomId,
+          hostTakeoverRequest: reqPayload,
+          updatedAt: Date.now()
+        }, { merge: true });
+        state.hostTakeoverRequest = reqPayload;
+        renderMembersManageModal();
+        showToast(`ホスト引き継ぎを申請しました（他メンバー${requiredApprovals}人の同意で交代します）`, 'info');
+      } catch (e) {
+        console.error('startHostTakeoverRequest error:', e);
+        showToast('引き継ぎ申請に失敗しました', 'error');
+      }
+    }
+
+    window.toggleApproveHostTakeover = async function() {
+      const myUid = getEffectiveAccountId();
+      const req = state.hostTakeoverRequest;
+      if (!isFirebaseReady || !db || !state.roomId || !myUid || !req || !req.candidateUid) return;
+      if (myUid === req.candidateUid) return;
+
+      const validMemberUids = new Set(state.members.map(m => m.uid));
+      validMemberUids.add(myUid);
+      const totalMembers = validMemberUids.size;
+      const requiredApprovals = getRequiredHostTakeoverApprovals(totalMembers);
+
+      let approvals = Array.isArray(req.approvals)
+        ? req.approvals.filter(u => u !== req.candidateUid && validMemberUids.has(u))
+        : [];
+
+      if (approvals.includes(myUid)) {
+        approvals = approvals.filter(u => u !== myUid);
+      } else {
+        approvals.push(myUid);
+      }
+
+      const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+
+      try {
+        // 必要同意数に達した場合は即座に新しいホストへ昇格
+        if (approvals.length >= requiredApprovals) {
+          const newCode = generateHostRecoveryCode();
+          await setDoc(metaRef, {
+            hostUid: req.candidateUid,
+            hostRecoveryCode: newCode,
+            hostTakeoverRequest: null,
+            updatedAt: Date.now()
+          }, { merge: true });
+          showToast(`同意が${requiredApprovals}人に達したため、${req.candidateName || '申請者'}さんが新しいホストになりました！`, 'success');
+        } else {
+          const updatedReq = { ...req, approvals };
+          await updateDoc(metaRef, {
+            hostTakeoverRequest: updatedReq,
+            updatedAt: Date.now()
+          });
+          showToast(`同意状況を更新しました（現在 ${approvals.length} / ${requiredApprovals}人）`, 'info');
+        }
+      } catch (e) {
+        console.error('toggleApproveHostTakeover error:', e);
+        showToast('同意の更新に失敗しました', 'error');
+      }
+    };
+
+    window.cancelHostTakeoverRequest = async function() {
+      if (!isFirebaseReady || !db || !state.roomId) return;
+      try {
+        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+        await updateDoc(metaRef, {
+          hostTakeoverRequest: null,
+          updatedAt: Date.now()
+        });
+        showToast('ホスト引き継ぎ申請を取り消しました', 'info');
+      } catch (e) {
+        showToast('申請の取り消しに失敗しました', 'error');
+      }
+    };
+
+    async function promoteSelfToHost(successMessage) {
+      const myUid = getEffectiveAccountId();
+      if (!isFirebaseReady || !db || !state.roomId || !myUid) return;
+      try {
+        const newCode = generateHostRecoveryCode();
+        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+        await setDoc(metaRef, {
+          roomId: state.roomId,
+          name: state.roomName || state.roomId,
+          hostUid: myUid,
+          hostRecoveryCode: newCode,
+          hostTakeoverRequest: null,
+          updatedAt: Date.now()
+        }, { merge: true });
+        state.hostUid = myUid;
+        state.hostRecoveryCode = newCode;
+        state.hostTakeoverRequest = null;
+        updateProfileUI();
+        renderActiveMembersBar();
+        renderMembersManageModal();
+        showToast(successMessage, 'success');
+      } catch (e) {
+        console.error('promoteSelfToHost error:', e);
+        showToast('ホスト権限の引き継ぎに失敗しました', 'error');
+      }
     }
 
     window.confirmTransferHost = function(targetUid, targetName) {
@@ -1768,6 +2080,7 @@
       state.roomId = '';
       state.roomName = '';
       state.hostUid = '';
+      state.hostRecoveryCode = '';
       state.members = [];
       state.tasks = [];
       state.events = [];
@@ -2980,7 +3293,6 @@
       input.value = '';
       updateUrlHashState();
 
-      // 引継ぎ先アカウントが所属・ホストしているグループをデータベースから検索して履歴・現在グループへ反映
       let targetRoomId = state.roomId;
       if (isFirebaseReady && db) {
         try {
@@ -3119,7 +3431,6 @@
           }, 700);
         }
       } catch (e) {
-        // ネットワーク未接続時などはスキップ
       } finally {
         isCheckingAppUpdate = false;
       }
