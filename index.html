@@ -204,25 +204,25 @@
               </button>
               <button onclick="setTaskViewMode('kanban')" id="btn-view-kanban" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition">
                 <i class="fa-solid fa-table-columns mr-1"></i>ステータス別
-        <div class="bg-slate-50 dark:bg-zinc-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-700 flex flex-col gap-2.5">
-          <div class="flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <div class="text-[10px] font-bold text-slate-500 dark:text-zinc-400">固定アカウントID（ホーム画面追加・他端末引継ぎ用）</div>
-              <div id="profile-account-uid" class="font-mono text-[11px] font-semibold text-slate-700 dark:text-zinc-200 truncate mt-0.5">読み込み中...</div>
+              </button>
             </div>
-            <button type="button" onclick="copyAccountUid()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 shrink-0">
-              <i class="fa-regular fa-copy mr-1"></i>IDコピー
-            </button>
           </div>
-          <button type="button" onclick="copyHomeScreenSyncUrl()" class="w-full py-2 px-3 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 border border-indigo-200/80 dark:border-indigo-500/30 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 transition flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-mobile-screen-button"></i>
-            <span>ホーム画面追加用の引継ぎURLをコピー</span>
-          </button>
-          <div class="pt-1 border-t border-slate-200/70 dark:border-zinc-700/70">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-zinc-400 mb-1">別ブラウザ・ホーム画面アプリにアカウントを引き継ぐ場合</label>
-            <div class="flex gap-1.5">
-              <input type="text" id="input-import-account-id" placeholder="コピーしたアカウントIDを貼り付け..." class="flex-1 font-mono text-[11px] rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white px-2.5 py-1.5 focus:outline-none">
-              <button type="button" onclick="importAccountUid()" class="px-3 py-1.5 rounded-lg bg-slate-800 dark:bg-zinc-700 hover:bg-slate-700 text-white text-[11px] font-bold shrink-0">適用</button>
+
+          <!-- フィルター・検索バー -->
+          <div class="grid grid-cols-2 sm:grid-cols-12 gap-2">
+            <select id="filter-status" onchange="renderTasks()" class="col-span-1 sm:col-span-3 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-2.5 py-2 focus:outline-none">
+              <option value="ALL">すべての状態</option>
+              <option value="進行中">進行中</option>
+              <option value="レビュー待ち">レビュー待ち</option>
+              <option value="一時停止">一時停止</option>
+              <option value="完了">完了</option>
+            </select>
+            <select id="filter-member" onchange="renderTasks()" class="col-span-1 sm:col-span-4 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 px-2.5 py-2 focus:outline-none">
+              <option value="ALL">すべてのメンバー</option>
+            </select>
+            <div class="col-span-2 sm:col-span-5 relative">
+              <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <input type="text" id="filter-search" oninput="renderTasks()" placeholder="キーワード・タグ検索..." class="w-full text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 pl-8 pr-3 py-2 focus:outline-none">
             </div>
           </div>
         </div>
@@ -697,15 +697,26 @@
           <div id="avatar-color-picker" class="flex flex-wrap gap-2"></div>
         </div>
 
-        <div class="bg-slate-50 dark:bg-zinc-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-700">
+        <div class="bg-slate-50 dark:bg-zinc-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-700 flex flex-col gap-2.5">
           <div class="flex items-center justify-between gap-2">
             <div class="min-w-0">
-              <div class="text-[10px] font-bold text-slate-500 dark:text-zinc-400">固定アカウントID（端末に自動保存済）</div>
+              <div class="text-[10px] font-bold text-slate-500 dark:text-zinc-400">固定アカウントID（ホーム画面追加・他端末引継ぎ用）</div>
               <div id="profile-account-uid" class="font-mono text-[11px] font-semibold text-slate-700 dark:text-zinc-200 truncate mt-0.5">読み込み中...</div>
             </div>
             <button type="button" onclick="copyAccountUid()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 shrink-0">
-              <i class="fa-regular fa-copy mr-1"></i>コピー
+              <i class="fa-regular fa-copy mr-1"></i>IDコピー
             </button>
+          </div>
+          <button type="button" onclick="copyHomeScreenSyncUrl()" class="w-full py-2 px-3 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 border border-indigo-200/80 dark:border-indigo-500/30 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span>ホーム画面追加用の引継ぎURLをコピー</span>
+          </button>
+          <div class="pt-1 border-t border-slate-200/70 dark:border-zinc-700/70">
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-zinc-400 mb-1">別ブラウザ・ホーム画面アプリにアカウントを引き継ぐ場合</label>
+            <div class="flex gap-1.5">
+              <input type="text" id="input-import-account-id" placeholder="コピーしたアカウントIDを貼り付け..." class="flex-1 font-mono text-[11px] rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-900 dark:text-white px-2.5 py-1.5 focus:outline-none">
+              <button type="button" onclick="importAccountUid()" class="px-3 py-1.5 rounded-lg bg-slate-800 dark:bg-zinc-700 hover:bg-slate-700 text-white text-[11px] font-bold shrink-0">適用</button>
+            </div>
           </div>
         </div>
 
