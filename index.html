@@ -1353,19 +1353,33 @@
 
       try {
         const snap = await getDoc(roomDocRef);
-        if (!snap.exists() && !options.isNewlyCreated) {
-          removeGroupFromHistory(targetRoomId);
-          if (state.roomId === targetRoomId) {
-            state.roomId = '';
-            state.roomName = '';
-            updateRoomUI();
-          }
-          showGroupNotFoundModal(targetRoomId);
-          return false;
-        }
-
         const myAccId = getEffectiveAccountId();
-        if (options.isNewlyCreated) {
+
+        if (!snap.exists() && !options.isNewlyCreated) {
+          // 履歴やURLハッシュからの復帰時は削除せず、同IDで復元できるように案内
+          const isFromHistoryOrHash = state.recentGroups.some(g => g.id === targetRoomId) || (window.location.hash || '').includes(encodeURIComponent(targetRoomId));
+          if (isFromHistoryOrHash) {
+            const historyItem = state.recentGroups.find(g => g.id === targetRoomId);
+            const restoredName = (historyItem && historyItem.name) ? historyItem.name : targetRoomId;
+            const newCode = generateHostRecoveryCode();
+            state.roomName = restoredName;
+            state.hostUid = myAccId;
+            state.hostRecoveryCode = newCode;
+            state.hostClaim = null;
+            await setDoc(roomDocRef, {
+              name: restoredName,
+              hostUid: myAccId,
+              hostRecoveryCode: newCode,
+              hostClaim: null,
+              createdAt: Date.now(),
+              updatedAt: Date.now()
+            }, { merge: true });
+            showToast(`グループ「${restoredName}」を復元しました`, 'info');
+          } else {
+            showGroupNotFoundModal(targetRoomId);
+            return false;
+          }
+        } else if (options.isNewlyCreated) {
           const newCode = generateHostRecoveryCode();
           state.hostRecoveryCode = newCode;
           await setDoc(roomDocRef, {
