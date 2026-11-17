@@ -1273,13 +1273,23 @@
 
     function buildGroupInviteCodeString() {
       if (!state.roomId) return '';
+      const myAccId = getEffectiveAccountId();
+      const memberList = Array.isArray(state.members) ? [...state.members] : [];
+      if (!memberList.some(m => m.accountId === myAccId)) {
+        memberList.unshift({
+          accountId: myAccId,
+          name: state.profile.name || 'ホスト',
+          role: state.profile.role || '',
+          color: state.profile.color || 'indigo'
+        });
+      }
       const payload = {
         v: 1,
         id: state.roomId,
         name: state.roomName || state.roomId,
-        h: state.hostUid || getEffectiveAccountId(),
+        h: state.hostUid || myAccId,
         l: state.customCategoryLabels || {},
-        m: (state.members || []).map(m => ({
+        m: memberList.map(m => ({
           a: m.accountId || '',
           n: m.name || '',
           r: m.role || '',
@@ -1454,7 +1464,12 @@
         const eRaw = localStorage.getItem(`teamsync_events_${roomId}`);
         if (eRaw) state.events = JSON.parse(eRaw);
         const mRaw = localStorage.getItem(`teamsync_members_${roomId}`);
-        if (mRaw) state.members = JSON.parse(mRaw);
+        if (mRaw) {
+          const parsedMembers = JSON.parse(mRaw);
+          if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
+            state.members = parsedMembers;
+          }
+        }
       } catch (e) {}
     }
 
@@ -3267,6 +3282,9 @@
       const incomingEvents = Array.isArray(parsed.e) ? parsed.e : [];
 
       if (!isSameCurrentRoom) {
+        state.members = [];
+        state.tasks = [];
+        state.events = [];
         loadLocalRoomCache(targetRoomId);
       }
 
@@ -3286,6 +3304,8 @@
         };
         if (existingIdx < 0) {
           state.members.push(memberObj);
+        } else {
+          state.members[existingIdx] = { ...state.members[existingIdx], ...memberObj };
         }
       });
 
@@ -3336,6 +3356,8 @@
       closeRoomModal();
       closeCreateGroupModal();
       await verifyAndEnterRoom(targetRoomId);
+      updateMembersBadgeAndFilters();
+      renderActiveMembersList();
 
       if (isFirebaseReady && db) {
         try {
@@ -3345,6 +3367,11 @@
             customCategoryLabels: state.customCategoryLabels || {},
             updatedAt: Date.now()
           }, { merge: true });
+          for (const m of state.members) {
+            if (m.accountId) {
+              await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
+            }
+          }
           for (const t of state.tasks) {
             if (t.id) await setDoc(doc(db, `${basePath}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
           }
