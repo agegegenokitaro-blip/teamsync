@@ -293,13 +293,35 @@
               </h2>
               <p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">メンバーの作業内容・進捗率・共同作業者をリアルタイム共有</p>
             </div>
-            <div class="flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-700">
-              <button onclick="setTaskViewMode('cards')" id="btn-view-cards" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition">
-                <i class="fa-solid fa-grip-vertical mr-1"></i>カード
-              </button>
-              <button onclick="setTaskViewMode('kanban')" id="btn-view-kanban" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition">
-                <i class="fa-solid fa-table-columns mr-1"></i>ステータス別
-              </button>
+            <div class="flex items-center gap-1.5">
+              <!-- 詳細モード / シンプルモード 2アイコン並列セグメント切替ボタン -->
+              <div class="flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-700 shrink-0" role="group" aria-label="表示モード切替">
+                <button type="button" onclick="setTaskDisplayDensity('detail')" id="btn-density-detail" class="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition" title="詳細モード">
+                  <!-- 上下2段の角丸長方形アイコン -->
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                    <rect x="2" y="2.2" width="12" height="4.6" rx="1.4" />
+                    <rect x="2" y="9.2" width="12" height="4.6" rx="1.4" />
+                  </svg>
+                </button>
+                <button type="button" onclick="setTaskDisplayDensity('simple')" id="btn-density-simple" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-300 transition" title="シンプルモード（縦2列）">
+                  <!-- 2×2の角丸正方形アイコン -->
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                    <rect x="2" y="2" width="4.8" height="4.8" rx="1.3" />
+                    <rect x="9.2" y="2" width="4.8" height="4.8" rx="1.3" />
+                    <rect x="2" y="9.2" width="4.8" height="4.8" rx="1.3" />
+                    <rect x="9.2" y="9.2" width="4.8" height="4.8" rx="1.3" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-700">
+                <button onclick="setTaskViewMode('cards')" id="btn-view-cards" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition">
+                  <i class="fa-solid fa-grip-vertical mr-1"></i>カード
+                </button>
+                <button onclick="setTaskViewMode('kanban')" id="btn-view-kanban" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition">
+                  <i class="fa-solid fa-table-columns mr-1"></i>ステータス別
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1146,6 +1168,7 @@
       currentMonth: new Date().getMonth(),
       mainTab: 'both',
       taskViewMode: 'cards',
+      taskDisplayDensity: 'detail', // 'detail'（詳細モード） | 'simple'（シンプルモード）
       activeDetailTaskId: null,
       selectedTaskCollaborators: [],
       selectedEventCollaborators: [],
@@ -1218,35 +1241,35 @@
       return formatDateStr(now.getFullYear(), now.getMonth(), now.getDate());
     }
 
-    function generateRandomGroupId() {
-      const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
-      let id = 'team-';
-      for (let i = 0; i < 6; i++) {
-        id += chars[Math.floor(Math.random() * chars.length)];
+    window.setTaskDisplayDensity = function(mode) {
+      if (state.taskDisplayDensity === mode) return;
+      state.taskDisplayDensity = mode;
+      updateTaskDensityButtonUI();
+      if (state.taskDisplayDensity === 'simple' && state.taskViewMode === 'kanban') {
+        setTaskViewMode('cards');
+        return;
       }
-      return id;
-    }
+      renderTasks();
+    };
 
-    function generateHostRecoveryCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 6; i++) {
-        code += chars[Math.floor(Math.random() * chars.length)];
-      }
-      return code;
-    }
+    function updateTaskDensityButtonUI() {
+      const btnDetail = document.getElementById('btn-density-detail');
+      const btnSimple = document.getElementById('btn-density-simple');
+      if (!btnDetail || !btnSimple) return;
 
-    function loadGroupHistory() {
-      try {
-        const raw = localStorage.getItem('teamsync_group_history');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            state.recentGroups = parsed.filter(g => g && g.id && g.id !== 'team-alpha');
-          }
-        }
-      } catch (e) {
-        state.recentGroups = [];
+      const activeClasses = ['bg-white', 'dark:bg-zinc-700', 'text-indigo-600', 'dark:text-indigo-300', 'shadow-2xs'];
+      const inactiveClasses = ['text-slate-400', 'dark:text-zinc-500', 'hover:text-slate-700', 'dark:hover:text-zinc-300'];
+
+      if (state.taskDisplayDensity === 'simple') {
+        btnSimple.classList.add(...activeClasses);
+        btnSimple.classList.remove(...inactiveClasses);
+        btnDetail.classList.remove(...activeClasses);
+        btnDetail.classList.add(...inactiveClasses);
+      } else {
+        btnDetail.classList.add(...activeClasses);
+        btnDetail.classList.remove(...inactiveClasses);
+        btnSimple.classList.remove(...activeClasses);
+        btnSimple.classList.add(...inactiveClasses);
       }
     }
 
@@ -1269,6 +1292,38 @@
       try {
         localStorage.setItem('teamsync_group_history', JSON.stringify(state.recentGroups));
       } catch (e) {}
+    }
+
+    function loadGroupHistory() {
+      try {
+        const raw = localStorage.getItem('teamsync_group_history');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            state.recentGroups = parsed.filter(g => g && g.id && g.id !== 'team-alpha');
+          }
+        }
+      } catch (e) {
+        state.recentGroups = [];
+      }
+    }
+
+    function generateRandomGroupId() {
+      const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+      let id = 'team-';
+      for (let i = 0; i < 6; i++) {
+        id += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return id;
+    }
+
+    function generateHostRecoveryCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
     }
 
     function initTheme() {
@@ -2270,6 +2325,16 @@
       renderTasks();
     };
 
+    window.toggleTaskDisplayDensity = function() {
+      state.taskDisplayDensity = state.taskDisplayDensity === 'detail' ? 'simple' : 'detail';
+      updateTaskDensityButtonUI();
+      if (state.taskDisplayDensity === 'simple' && state.taskViewMode === 'kanban') {
+        setTaskViewMode('cards');
+        return;
+      }
+      renderTasks();
+    };
+
     function getStatusBadgeClass(status) {
       switch (status) {
         case '進行中': return 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30';
@@ -2366,9 +2431,29 @@
             }).join('')}
           </div>
         `;
+      } else if (state.taskDisplayDensity === 'simple') {
+        container.innerHTML = `<div class="grid grid-cols-2 gap-2.5">${filtered.map(t => renderSimpleTaskCard(t)).join('')}</div>`;
       } else {
         container.innerHTML = `<div class="flex flex-col gap-3">${filtered.map(t => renderSingleTaskCard(t, false)).join('')}</div>`;
       }
+    }
+
+    function renderSimpleTaskCard(t) {
+      const comments = Array.isArray(t.comments) ? t.comments : [];
+      return `
+        <div onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="cursor-pointer bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-3 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition shadow-2xs flex flex-col justify-between gap-2 min-h-[84px] group">
+          <div class="flex items-center justify-between gap-1.5">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border truncate ${getStatusBadgeClass(t.status)}">${escapeHtml(t.status || '進行中')}</span>
+            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 dark:text-zinc-500 group-hover:text-indigo-500 transition shrink-0" title="コメントスレッドを開く">
+              <i class="fa-regular fa-comment"></i>
+              ${comments.length > 0 ? `<span class="text-[10px]">${comments.length}</span>` : ''}
+            </span>
+          </div>
+          <h3 class="text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-snug line-clamp-2">
+            ${escapeHtml(t.title)}
+          </h3>
+        </div>
+      `;
     }
 
     function renderSingleTaskCard(t, compact = false) {
