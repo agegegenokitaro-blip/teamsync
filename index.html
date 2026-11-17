@@ -754,10 +754,16 @@
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>グループを退出</span>
           </button>
-          <button onclick="closeRoomModal(); openCreateGroupModal();" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold transition flex items-center gap-1.5">
-            <i class="fa-solid fa-folder-plus text-indigo-600 dark:text-indigo-400"></i>
-            <span>新しくグループを作る</span>
-          </button>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button type="button" onclick="copyInviteLinkFromModal()" class="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-link"></i>
+              <span>招待リンクコピー</span>
+            </button>
+            <button onclick="closeRoomModal(); openCreateGroupModal();" class="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-folder-plus text-indigo-600 dark:text-indigo-400"></i>
+              <span>新規グループ</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1052,16 +1058,16 @@
     // 1. 状態管理・定数定義
     // ==========================================
     const EVENT_COLORS = [
-      { key: 'blue', defaultLabel: 'ブルー（会議・定例）', dot: 'bg-blue-500', pill: 'bg-blue-100 text-blue-800 dark:bg-blue-500/25 dark:text-blue-200', badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30' },
-      { key: 'emerald', defaultLabel: 'エメラルド（納品・リリース）', dot: 'bg-emerald-500', pill: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-200', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30' },
-      { key: 'amber', defaultLabel: 'アンバー（締切・期限）', dot: 'bg-amber-500', pill: 'bg-amber-100 text-amber-900 dark:bg-amber-500/25 dark:text-amber-200', badge: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30' },
-      { key: 'rose', defaultLabel: 'ローズ（重要・緊急）', dot: 'bg-rose-500', pill: 'bg-rose-100 text-rose-800 dark:bg-rose-500/25 dark:text-rose-200', badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30' },
-      { key: 'violet', defaultLabel: 'バイオレット（企画・開発）', dot: 'bg-violet-500', pill: 'bg-violet-100 text-violet-800 dark:bg-violet-500/25 dark:text-violet-200', badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/30' },
-      { key: 'cyan', defaultLabel: 'シアン（外部・商談）', dot: 'bg-cyan-500', pill: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/25 dark:text-cyan-200', badge: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-500/30' },
-      { key: 'orange', defaultLabel: 'オレンジ（イベント・出張）', dot: 'bg-orange-500', pill: 'bg-orange-100 text-orange-800 dark:bg-orange-500/25 dark:text-orange-200', badge: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30' },
-      { key: 'pink', defaultLabel: 'ピンク（チーム交流）', dot: 'bg-pink-500', pill: 'bg-pink-100 text-pink-800 dark:bg-pink-500/25 dark:text-pink-200', badge: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/30' },
-      { key: 'teal', defaultLabel: 'ティール（研修・勉強会）', dot: 'bg-teal-500', pill: 'bg-teal-100 text-teal-800 dark:bg-teal-500/25 dark:text-teal-200', badge: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30' },
-      { key: 'slate', defaultLabel: 'スレート（休暇・その他）', dot: 'bg-slate-500', pill: 'bg-slate-200 text-slate-800 dark:bg-zinc-700 dark:text-zinc-200', badge: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' }
+      { key: 'blue', defaultLabel: 'ブルー', dot: 'bg-blue-500', pill: 'bg-blue-100 text-blue-800 dark:bg-blue-500/25 dark:text-blue-200', badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30' },
+      { key: 'emerald', defaultLabel: 'エメラルド', dot: 'bg-emerald-500', pill: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-200', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30' },
+      { key: 'amber', defaultLabel: 'アンバー', dot: 'bg-amber-500', pill: 'bg-amber-100 text-amber-900 dark:bg-amber-500/25 dark:text-amber-200', badge: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30' },
+      { key: 'rose', defaultLabel: 'ローズ', dot: 'bg-rose-500', pill: 'bg-rose-100 text-rose-800 dark:bg-rose-500/25 dark:text-rose-200', badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30' },
+      { key: 'violet', defaultLabel: 'バイオレット', dot: 'bg-violet-500', pill: 'bg-violet-100 text-violet-800 dark:bg-violet-500/25 dark:text-violet-200', badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/30' },
+      { key: 'cyan', defaultLabel: 'シアン', dot: 'bg-cyan-500', pill: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/25 dark:text-cyan-200', badge: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-500/15 dark:text-cyan-300 dark:border-cyan-500/30' },
+      { key: 'orange', defaultLabel: 'オレンジ', dot: 'bg-orange-500', pill: 'bg-orange-100 text-orange-800 dark:bg-orange-500/25 dark:text-orange-200', badge: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-500/30' },
+      { key: 'pink', defaultLabel: 'ピンク', dot: 'bg-pink-500', pill: 'bg-pink-100 text-pink-800 dark:bg-pink-500/25 dark:text-pink-200', badge: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/30' },
+      { key: 'teal', defaultLabel: 'ティール', dot: 'bg-teal-500', pill: 'bg-teal-100 text-teal-800 dark:bg-teal-500/25 dark:text-teal-200', badge: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30' },
+      { key: 'slate', defaultLabel: 'スレート', dot: 'bg-slate-500', pill: 'bg-slate-200 text-slate-800 dark:bg-zinc-700 dark:text-zinc-200', badge: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' }
     ];
 
     const AVATAR_COLORS = [
@@ -1279,6 +1285,12 @@
     function loadRoomProfileLocal(roomId) {
       if (!roomId) return;
       try {
+        const savedLabels = localStorage.getItem(`teamsync_category_labels_${roomId}`);
+        state.customCategoryLabels = savedLabels ? JSON.parse(savedLabels) : {};
+      } catch (e) {
+        state.customCategoryLabels = {};
+      }
+      try {
         const raw = localStorage.getItem(`teamsync_profile_${roomId}`);
         if (raw) {
           const parsed = JSON.parse(raw);
@@ -1295,6 +1307,33 @@
           role: '',
           color: 'indigo'
         };
+      } catch (e) {}
+    }
+
+    function saveRoomCategoryLabelsLocal(roomId, labels) {
+      if (!roomId) return;
+      try {
+        localStorage.setItem(`teamsync_category_labels_${roomId}`, JSON.stringify(labels || {}));
+      } catch (e) {}
+    }
+
+    function loadRoomOfflineDataLocal(roomId) {
+      if (!roomId) return;
+      try {
+        const rawTasks = localStorage.getItem(`teamsync_tasks_${roomId}`);
+        if (rawTasks) state.tasks = JSON.parse(rawTasks);
+      } catch (e) {}
+      try {
+        const rawEvents = localStorage.getItem(`teamsync_events_${roomId}`);
+        if (rawEvents) state.events = JSON.parse(rawEvents);
+      } catch (e) {}
+    }
+
+    function saveRoomOfflineDataLocal(roomId) {
+      if (!roomId) return;
+      try {
+        localStorage.setItem(`teamsync_tasks_${roomId}`, JSON.stringify(state.tasks || []));
+        localStorage.setItem(`teamsync_events_${roomId}`, JSON.stringify(state.events || []));
       } catch (e) {}
     }
 
@@ -1420,12 +1459,19 @@
     async function verifyAndEnterRoom(targetRoomId, options = {}) {
       if (!targetRoomId || targetRoomId === 'team-alpha') return false;
       loadRoomProfileLocal(targetRoomId);
+      loadRoomOfflineDataLocal(targetRoomId);
       updateProfileUI();
 
       if (!isFirebaseReady || !db) {
         state.roomId = targetRoomId;
         updateRoomUI();
         updateUrlHashState();
+        renderActiveMembersBar();
+        renderCalendarLegend();
+        renderEventCategoryControls();
+        renderTasks();
+        renderCalendar();
+        renderEventsList();
         return true;
       }
 
@@ -1477,7 +1523,10 @@
           state.hostUid = data.hostUid || '';
           state.hostRecoveryCode = data.hostRecoveryCode || '';
           state.hostClaim = data.hostClaim || null;
-          state.customCategoryLabels = data.customCategoryLabels || {};
+          if (data.customCategoryLabels && Object.keys(data.customCategoryLabels).length > 0) {
+            state.customCategoryLabels = data.customCategoryLabels;
+            saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
+          }
         }
 
         state.roomId = targetRoomId;
@@ -1590,7 +1639,10 @@
         state.hostUid = data.hostUid || '';
         state.hostRecoveryCode = data.hostRecoveryCode || '';
         state.hostClaim = data.hostClaim || null;
-        state.customCategoryLabels = data.customCategoryLabels || {};
+        if (data.customCategoryLabels !== undefined) {
+          state.customCategoryLabels = data.customCategoryLabels || {};
+          saveRoomCategoryLabelsLocal(roomId, state.customCategoryLabels);
+        }
         updateRoomUI();
         renderActiveMembersBar();
         renderCalendarLegend();
@@ -1622,6 +1674,7 @@
         snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
         list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
         state.tasks = list;
+        saveRoomOfflineDataLocal(roomId);
         renderTasks();
         if (state.activeDetailTaskId) {
           renderTaskDetailModal(state.activeDetailTaskId);
@@ -1634,6 +1687,7 @@
         const list = [];
         snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
         state.events = list;
+        saveRoomOfflineDataLocal(roomId);
         renderCalendar();
         renderEventsList();
       });
@@ -2354,14 +2408,43 @@
     }
 
     window.quickUpdateTaskProgress = async function(taskId, val) {
-      if (!isFirebaseReady || !db || !state.roomId) return;
+      if (!state.roomId) return;
       const num = Number(val);
       const updates = { progress: num, updatedAt: Date.now() };
       if (num === 100) updates.status = '完了';
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), updates);
-      } catch (e) {
-        showToast('進捗の更新に失敗しました', 'error');
+
+      const idx = state.tasks.findIndex(t => t.id === taskId);
+      if (idx !== -1) {
+        state.tasks[idx] = { ...state.tasks[idx], ...updates };
+        saveRoomOfflineDataLocal(state.roomId);
+        renderTasks();
+      }
+
+      if (isFirebaseReady && db) {
+        try {
+          await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), updates);
+        } catch (e) {
+          showToast('進捗のクラウド同期に失敗しました', 'error');
+        }
+      }
+    };
+
+    window.toggleTaskAck = async function(taskId) {
+      if (!state.roomId) return;
+      const myId = getEffectiveAccountId();
+      if (!myId) return;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const acks = Array.isArray(task.acks) ? [...task.acks] : [];
+      const nextAcks = acks.includes(myId) ? acks.filter(id => id !== myId) : [...acks, myId];
+      task.acks = nextAcks;
+      saveRoomOfflineDataLocal(state.roomId);
+      renderTasks();
+
+      if (isFirebaseReady && db) {
+        try {
+          await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), { acks: nextAcks });
+        } catch (e) {}
       }
     };
 
@@ -2465,7 +2548,10 @@
 
     window.saveTask = async function(e) {
       e.preventDefault();
-      if (!isFirebaseReady || !db || !state.roomId) return;
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
 
       const id = document.getElementById('task-id').value;
       const progress = Number(document.getElementById('task-progress').value);
@@ -2484,6 +2570,27 @@
         desc: document.getElementById('task-desc').value.trim(),
         updatedAt: Date.now()
       };
+
+      if (!isFirebaseReady || !db) {
+        if (id) {
+          const idx = state.tasks.findIndex(t => t.id === id);
+          if (idx !== -1) state.tasks[idx] = { ...state.tasks[idx], ...payload };
+          showToast('作業内容を更新しました');
+        } else {
+          state.tasks.unshift({
+            id: 'local-task-' + Date.now(),
+            ...payload,
+            createdAt: Date.now(),
+            comments: [],
+            acks: []
+          });
+          showToast('新しい仕事を共有しました');
+        }
+        saveRoomOfflineDataLocal(state.roomId);
+        renderTasks();
+        closeTaskModal();
+        return;
+      }
 
       try {
         const colRef = collection(db, `${getRoomBasePath(state.roomId)}/tasks`);
@@ -2506,6 +2613,13 @@
 
     window.deleteTask = function(taskId) {
       openConfirmModal('この作業報告を削除してもよろしいですか？', async () => {
+        if (!isFirebaseReady || !db) {
+          state.tasks = state.tasks.filter(t => t.id !== taskId);
+          saveRoomOfflineDataLocal(state.roomId);
+          renderTasks();
+          showToast('削除しました');
+          return;
+        }
         try {
           await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId));
           showToast('削除しました');
@@ -2580,7 +2694,7 @@
 
     window.submitTaskComment = async function(e) {
       e.preventDefault();
-      if (!state.activeDetailTaskId || !isFirebaseReady || !db) return;
+      if (!state.activeDetailTaskId) return;
       const input = document.getElementById('new-comment-input');
       const text = (input?.value || '').trim();
       if (!text) return;
@@ -2591,6 +2705,16 @@
         ...(Array.isArray(task.comments) ? task.comments : []),
         { author: state.profile.name || 'ゲスト', text, createdAt: Date.now() }
       ];
+
+      if (!isFirebaseReady || !db) {
+        task.comments = nextComments;
+        task.updatedAt = Date.now();
+        saveRoomOfflineDataLocal(state.roomId);
+        renderTaskDetailModal(task.id);
+        renderTasks();
+        input.value = '';
+        return;
+      }
 
       try {
         await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, task.id), {
@@ -3033,7 +3157,10 @@
 
     window.saveEvent = async function(e) {
       e.preventDefault();
-      if (!isFirebaseReady || !db || !state.roomId) return;
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
 
       const id = document.getElementById('event-id').value;
       const allDay = document.getElementById('event-allday').checked;
@@ -3049,6 +3176,26 @@
         memo: document.getElementById('event-memo').value.trim(),
         updatedAt: Date.now()
       };
+
+      if (!isFirebaseReady || !db) {
+        if (id) {
+          const idx = state.events.findIndex(ev => ev.id === id);
+          if (idx !== -1) state.events[idx] = { ...state.events[idx], ...payload };
+          showToast('予定を更新しました');
+        } else {
+          state.events.push({
+            id: 'local-ev-' + Date.now(),
+            ...payload,
+            createdAt: Date.now()
+          });
+          showToast('予定をカレンダーに追加しました');
+        }
+        saveRoomOfflineDataLocal(state.roomId);
+        renderCalendar();
+        renderEventsList();
+        closeEventModal();
+        return;
+      }
 
       try {
         const colRef = collection(db, `${getRoomBasePath(state.roomId)}/events`);
@@ -3071,6 +3218,15 @@
       const id = document.getElementById('event-id').value;
       if (!id) return;
       openConfirmModal('この予定を削除してもよろしいですか？', async () => {
+        if (!isFirebaseReady || !db) {
+          state.events = state.events.filter(ev => ev.id !== id);
+          saveRoomOfflineDataLocal(state.roomId);
+          renderCalendar();
+          renderEventsList();
+          closeEventModal();
+          showToast('予定を削除しました');
+          return;
+        }
         try {
           await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/events`, id));
           closeEventModal();
@@ -3116,26 +3272,35 @@
     };
 
     window.saveCategoryLabels = async function(e) {
-      e.preventDefault();
-      if (!isFirebaseReady || !db || !state.roomId) return;
+      if (e) e.preventDefault();
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
       const newLabels = {};
       EVENT_COLORS.forEach(c => {
-        const val = (document.getElementById(`cat-label-input-${c.key}`)?.value || '').trim();
+        const inputEl = document.getElementById(`cat-label-input-${c.key}`);
+        const val = (inputEl ? inputEl.value : '').trim();
         if (val) newLabels[c.key] = val;
       });
-      try {
-        const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-        await setDoc(metaRef, { customCategoryLabels: newLabels, updatedAt: Date.now() }, { merge: true });
-        state.customCategoryLabels = newLabels;
-        renderCalendarLegend();
-        renderEventCategoryControls();
-        renderCalendar();
-        renderEventsList();
-        closeCategoryLabelsModal();
-        showToast('色分けラベルをグループ全体に保存しました');
-      } catch (err) {
-        showToast('保存に失敗しました', 'error');
+
+      state.customCategoryLabels = newLabels;
+      saveRoomCategoryLabelsLocal(state.roomId, newLabels);
+      renderCalendarLegend();
+      renderEventCategoryControls();
+      renderCalendar();
+      renderEventsList();
+      closeCategoryLabelsModal();
+
+      if (isFirebaseReady && db) {
+        try {
+          const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
+          await setDoc(metaRef, { customCategoryLabels: newLabels, updatedAt: Date.now() }, { merge: true });
+        } catch (err) {
+          console.error('saveCategoryLabels firestore error:', err);
+        }
       }
+      showToast('色分けラベルをグループに保存しました');
     };
 
     // ==========================================
@@ -3222,6 +3387,17 @@
       const modal = document.getElementById('room-modal');
       modal.classList.add('hidden');
       modal.classList.remove('flex');
+    };
+
+    window.copyInviteLinkFromModal = function() {
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
+      const baseUrl = window.location.href.split('#')[0];
+      const shareText = `【TeamSync】グループ「${state.roomName || state.roomId}」に招待されました！\nグループID: ${state.roomId}\n参加URL: ${baseUrl}#room=${encodeURIComponent(state.roomId)}`;
+      copyTextToClipboard(shareText);
+      showToast('招待リンクをコピーしました');
     };
 
     function renderRecentGroupsList() {
