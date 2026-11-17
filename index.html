@@ -1137,9 +1137,23 @@
     let invitedRoomNameFromUrl = '';
     let invitedSnapshotFromUrl = null;
 
-    // 環境提供の __app_id を最優先で使用（Firestoreセキュリティルール準拠）
-    const resolvedAppId = (typeof __app_id !== 'undefined' && __app_id) ? String(__app_id) : 'default-app-id';
-    const basePath = `artifacts/${resolvedAppId}/public/data`;
+    // 環境提供の __app_id を初期値とし、招待コード／招待リンク経由でホストと同じデータ空間IDに統一可能にする
+    const defaultResolvedAppId = (typeof __app_id !== 'undefined' && __app_id) ? String(__app_id) : 'default-app-id';
+    let activeAppId = localStorage.getItem('teamsync_active_app_id') || defaultResolvedAppId;
+
+    function getBasePath() {
+      return `artifacts/${activeAppId}/public/data`;
+    }
+
+    function setActiveAppId(nextAppId) {
+      if (!nextAppId) return;
+      const cleaned = String(nextAppId).trim();
+      if (!cleaned) return;
+      activeAppId = cleaned;
+      try {
+        localStorage.setItem('teamsync_active_app_id', cleaned);
+      } catch (e) {}
+    }
 
     // ==========================================
     // 2. ユーティリティ関数
@@ -1285,6 +1299,7 @@
       }
       const payload = {
         v: 1,
+        appId: activeAppId,
         id: state.roomId,
         name: state.roomName || state.roomId,
         h: state.hostUid || myAccId,
@@ -1343,6 +1358,7 @@
         });
       }
       const snapshotPayload = {
+        appId: activeAppId,
         h: state.hostUid || myAccId,
         m: memberList.slice(0, 15).map(m => ({
           a: m.accountId || '',
@@ -1601,7 +1617,7 @@
       if (!isFirebaseReady || !db) return;
       try {
         const myAccId = getEffectiveAccountId();
-        const qMembers = query(collection(db, `${basePath}/members`), where('accountId', '==', myAccId));
+        const qMembers = query(collection(db, `${getBasePath()}/members`), where('accountId', '==', myAccId));
         const snap = await getDocs(qMembers);
         if (!snap.empty) {
           let latest = null;
@@ -1621,19 +1637,19 @@
 
     async function migrateLegacyRoomDataIfAny(targetRoomId) {
       if (!isFirebaseReady || !db || !targetRoomId) return;
-      const legacyPrefix = `${basePath}/rooms/${targetRoomId}`;
+      const legacyPrefix = `${getBasePath()}/rooms/${targetRoomId}`;
       try {
         const legacyTasksSnap = await getDocs(collection(db, `${legacyPrefix}/tasks`));
         for (const d of legacyTasksSnap.docs) {
-          await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
+          await setDoc(doc(db, `${getBasePath()}/tasks`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
         const legacyEventsSnap = await getDocs(collection(db, `${legacyPrefix}/events`));
         for (const d of legacyEventsSnap.docs) {
-          await setDoc(doc(db, `${basePath}/events`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
+          await setDoc(doc(db, `${getBasePath()}/events`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
         const legacyMembersSnap = await getDocs(collection(db, `${legacyPrefix}/members`));
         for (const d of legacyMembersSnap.docs) {
-          await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${d.id}`), { ...d.data(), roomId: targetRoomId }, { merge: true });
+          await setDoc(doc(db, `${getBasePath()}/members`, `${targetRoomId}_${d.id}`), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
       } catch (e) {}
     }
@@ -1641,6 +1657,9 @@
     async function applyInvitedSnapshotIfPresent(targetRoomId) {
       if (!invitedSnapshotFromUrl || invitedRoomIdFromUrl !== targetRoomId) return;
       const snapData = invitedSnapshotFromUrl;
+      if (snapData.appId) {
+        setActiveAppId(snapData.appId);
+      }
       if (snapData.h && !state.hostUid) {
         state.hostUid = snapData.h;
       }
@@ -1667,7 +1686,7 @@
           }
           if (isFirebaseReady && db) {
             try {
-              await setDoc(doc(db, `${basePath}/members`, mDocId), memberPayload, { merge: true });
+              await setDoc(doc(db, `${getBasePath()}/members`, mDocId), memberPayload, { merge: true });
             } catch (e) {}
           }
         }
@@ -1684,7 +1703,7 @@
           }
           if (isFirebaseReady && db) {
             try {
-              await setDoc(doc(db, `${basePath}/tasks`, t.id), taskPayload, { merge: true });
+              await setDoc(doc(db, `${getBasePath()}/tasks`, t.id), taskPayload, { merge: true });
             } catch (e) {}
           }
         }
@@ -1702,7 +1721,7 @@
           }
           if (isFirebaseReady && db) {
             try {
-              await setDoc(doc(db, `${basePath}/events`, ev.id), eventPayload, { merge: true });
+              await setDoc(doc(db, `${getBasePath()}/events`, ev.id), eventPayload, { merge: true });
             } catch (e) {}
           }
         }
@@ -1734,7 +1753,7 @@
         return true;
       }
 
-      const roomDocRef = doc(db, `${basePath}/rooms`, targetRoomId);
+      const roomDocRef = doc(db, `${getBasePath()}/rooms`, targetRoomId);
       try {
         const snap = await getDoc(roomDocRef);
         const myAccId = getEffectiveAccountId();
@@ -1742,9 +1761,9 @@
         if (!snap.exists() && !options.isNewlyCreated) {
           let hasExistingRoomRecords = false;
           try {
-            const mSnap = await getDocs(query(collection(db, `${basePath}/members`), where('roomId', '==', targetRoomId)));
-            const tSnap = await getDocs(query(collection(db, `${basePath}/tasks`), where('roomId', '==', targetRoomId)));
-            const eSnap = await getDocs(query(collection(db, `${basePath}/events`), where('roomId', '==', targetRoomId)));
+            const mSnap = await getDocs(query(collection(db, `${getBasePath()}/members`), where('roomId', '==', targetRoomId)));
+            const tSnap = await getDocs(query(collection(db, `${getBasePath()}/tasks`), where('roomId', '==', targetRoomId)));
+            const eSnap = await getDocs(query(collection(db, `${getBasePath()}/events`), where('roomId', '==', targetRoomId)));
             hasExistingRoomRecords = !mSnap.empty || !tSnap.empty || !eSnap.empty;
           } catch (e) {}
 
@@ -1846,7 +1865,7 @@
       if (!isFirebaseReady || !db || !targetRoomId) return;
 
       // 1. グループメタデータ購読
-      unsubRoomMeta = onSnapshot(doc(db, `${basePath}/rooms`, targetRoomId), (snap) => {
+      unsubRoomMeta = onSnapshot(doc(db, `${getBasePath()}/rooms`, targetRoomId), (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
         if (data.name && data.name !== state.roomName) {
@@ -1870,7 +1889,7 @@
       });
 
       // 2. メンバー購読
-      const qMembers = query(collection(db, `${basePath}/members`), where('roomId', '==', targetRoomId));
+      const qMembers = query(collection(db, `${getBasePath()}/members`), where('roomId', '==', targetRoomId));
       unsubMembers = onSnapshot(qMembers, async (snap) => {
         const list = [];
         snap.forEach(d => list.push({ id: d.id, ...d.data() }));
@@ -1878,7 +1897,7 @@
           for (const m of state.members) {
             if (m.accountId) {
               try {
-                await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
+                await setDoc(doc(db, `${getBasePath()}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
               } catch (e) {}
             }
           }
@@ -1895,7 +1914,7 @@
       });
 
       // 3. 仕事タスク購読
-      const qTasks = query(collection(db, `${basePath}/tasks`), where('roomId', '==', targetRoomId));
+      const qTasks = query(collection(db, `${getBasePath()}/tasks`), where('roomId', '==', targetRoomId));
       unsubTasks = onSnapshot(qTasks, async (snap) => {
         const list = [];
         snap.forEach(d => list.push({ id: d.id, ...d.data() }));
@@ -1903,7 +1922,7 @@
           for (const t of state.tasks) {
             if (t.id) {
               try {
-                await setDoc(doc(db, `${basePath}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
+                await setDoc(doc(db, `${getBasePath()}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
               } catch (e) {}
             }
           }
@@ -1928,7 +1947,7 @@
       });
 
       // 4. カレンダー予定購読
-      const qEvents = query(collection(db, `${basePath}/events`), where('roomId', '==', targetRoomId));
+      const qEvents = query(collection(db, `${getBasePath()}/events`), where('roomId', '==', targetRoomId));
       unsubEvents = onSnapshot(qEvents, async (snap) => {
         const list = [];
         snap.forEach(d => list.push({ id: d.id, ...d.data() }));
@@ -1936,7 +1955,7 @@
           for (const ev of state.events) {
             if (ev.id) {
               try {
-                await setDoc(doc(db, `${basePath}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
+                await setDoc(doc(db, `${getBasePath()}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
               } catch (e) {}
             }
           }
@@ -1983,7 +2002,7 @@
 
       if (isFirebaseReady && db) {
         try {
-          await setDoc(doc(db, `${basePath}/members`, memberDocId), payload, { merge: true });
+          await setDoc(doc(db, `${getBasePath()}/members`, memberDocId), payload, { merge: true });
         } catch (e) {}
       }
     }
@@ -2207,7 +2226,7 @@
         onConfirm: async () => {
           state.hostUid = targetAccId;
           if (isFirebaseReady && db && state.roomId) {
-            await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: targetAccId, hostClaim: null });
+            await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostUid: targetAccId, hostClaim: null });
           }
           renderMembersManageList();
           renderActiveMembersList();
@@ -2227,7 +2246,7 @@
         state.hostUid = myAccId;
         state.hostClaim = null;
         if (isFirebaseReady && db) {
-          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: myAccId, hostClaim: null });
+          await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostUid: myAccId, hostClaim: null });
         }
         renderMembersManageList();
         showToast('新しいホスト権限を引き継ぎました');
@@ -2243,7 +2262,7 @@
       };
       state.hostClaim = claimObj;
       if (isFirebaseReady && db) {
-        await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostClaim: claimObj });
+        await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostClaim: claimObj });
       }
       renderMembersManageList();
       showToast('ホスト引き継ぎの同意申請を開始しました', 'info');
@@ -2261,13 +2280,13 @@
         state.hostUid = newHostId;
         state.hostClaim = null;
         if (isFirebaseReady && db) {
-          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: newHostId, hostClaim: null });
+          await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostUid: newHostId, hostClaim: null });
         }
         showToast(`${newHostName}さんが新しいホストに承認されました`);
       } else {
         state.hostClaim.approvers = approvers;
         if (isFirebaseReady && db) {
-          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostClaim: state.hostClaim });
+          await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostClaim: state.hostClaim });
         }
         showToast('引き継ぎ申請に同意しました');
       }
@@ -2277,7 +2296,7 @@
     window.cancelHostClaim = async function() {
       state.hostClaim = null;
       if (isFirebaseReady && db && state.roomId) {
-        await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostClaim: null });
+        await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostClaim: null });
       }
       renderMembersManageList();
       showToast('引き継ぎ申請を取り消しました', 'info');
@@ -2295,7 +2314,7 @@
         state.hostUid = myAccId;
         state.hostClaim = null;
         if (isFirebaseReady && db && state.roomId) {
-          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: myAccId, hostClaim: null });
+          await updateDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { hostUid: myAccId, hostClaim: null });
         }
         if (input) input.value = '';
         renderMembersManageList();
@@ -2317,7 +2336,7 @@
           const myAccId = getEffectiveAccountId();
           if (isFirebaseReady && db) {
             try {
-              await deleteDoc(doc(db, `${basePath}/members`, `${leavingId}_${myAccId}`));
+              await deleteDoc(doc(db, `${getBasePath()}/members`, `${leavingId}_${myAccId}`));
             } catch (e) {}
           }
           state.recentGroups = state.recentGroups.filter(g => g.id !== leavingId);
@@ -2681,7 +2700,7 @@
         saveLocalRoomCache(state.roomId);
         renderTasks();
         if (isFirebaseReady && db) {
-          try { await updateDoc(doc(db, `${basePath}/tasks`, existingId), payload); } catch (err) {}
+          try { await updateDoc(doc(db, `${getBasePath()}/tasks`, existingId), payload); } catch (err) {}
         }
         showToast('仕事の情報を更新しました');
       } else {
@@ -2691,7 +2710,7 @@
         saveLocalRoomCache(state.roomId);
         renderTasks();
         if (isFirebaseReady && db) {
-          try { await setDoc(doc(db, `${basePath}/tasks`, newId), fullDoc); } catch (err) {}
+          try { await setDoc(doc(db, `${getBasePath()}/tasks`, newId), fullDoc); } catch (err) {}
         }
         showToast('新しい仕事を共有しました');
       }
@@ -2709,7 +2728,7 @@
       saveLocalRoomCache(state.roomId);
       renderTasks();
       if (isFirebaseReady && db) {
-        try { await updateDoc(doc(db, `${basePath}/tasks`, taskId), { progress: num, status: newStatus, updatedAt: Date.now() }); } catch (e) {}
+        try { await updateDoc(doc(db, `${getBasePath()}/tasks`, taskId), { progress: num, status: newStatus, updatedAt: Date.now() }); } catch (e) {}
       }
     };
 
@@ -2725,7 +2744,7 @@
       saveLocalRoomCache(state.roomId);
       renderTasks();
       if (isFirebaseReady && db) {
-        try { await updateDoc(doc(db, `${basePath}/tasks`, taskId), { acknowledgedBy: acks }); } catch (e) {}
+        try { await updateDoc(doc(db, `${getBasePath()}/tasks`, taskId), { acknowledgedBy: acks }); } catch (e) {}
       }
     };
 
@@ -2739,7 +2758,7 @@
           saveLocalRoomCache(state.roomId);
           renderTasks();
           if (isFirebaseReady && db) {
-            try { await deleteDoc(doc(db, `${basePath}/tasks`, taskId)); } catch (e) {}
+            try { await deleteDoc(doc(db, `${getBasePath()}/tasks`, taskId)); } catch (e) {}
           }
           showToast('仕事を削除しました', 'info');
         }
@@ -2834,7 +2853,7 @@
       renderTasks();
 
       if (isFirebaseReady && db) {
-        try { await updateDoc(doc(db, `${basePath}/tasks`, taskId), { comments, updatedAt: Date.now() }); } catch (err) {}
+        try { await updateDoc(doc(db, `${getBasePath()}/tasks`, taskId), { comments, updatedAt: Date.now() }); } catch (err) {}
       }
     };
 
@@ -3260,7 +3279,7 @@
         renderCalendar();
         renderEventsList();
         if (isFirebaseReady && db) {
-          try { await updateDoc(doc(db, `${basePath}/events`, existingId), payload); } catch (err) {}
+          try { await updateDoc(doc(db, `${getBasePath()}/events`, existingId), payload); } catch (err) {}
         }
         showToast('予定を更新しました');
       } else {
@@ -3271,7 +3290,7 @@
         renderCalendar();
         renderEventsList();
         if (isFirebaseReady && db) {
-          try { await setDoc(doc(db, `${basePath}/events`, newId), fullDoc); } catch (err) {}
+          try { await setDoc(doc(db, `${getBasePath()}/events`, newId), fullDoc); } catch (err) {}
         }
         showToast('カレンダーに予定を登録しました');
       }
@@ -3286,7 +3305,7 @@
       renderCalendar();
       renderEventsList();
       if (isFirebaseReady && db) {
-        try { await deleteDoc(doc(db, `${basePath}/events`, existingId)); } catch (err) {}
+        try { await deleteDoc(doc(db, `${getBasePath()}/events`, existingId)); } catch (err) {}
       }
       closeEventModal();
       showToast('予定を削除しました', 'info');
@@ -3393,6 +3412,11 @@
       const targetRoomName = String(parsed.name || targetRoomId).trim();
       const isSameCurrentRoom = (state.roomId === targetRoomId);
 
+      // ホスト側のデータ空間ID（appId）が含まれていれば自動統一して同じクラウドパスへ接続
+      if (parsed.appId) {
+        setActiveAppId(parsed.appId);
+      }
+
       state.roomName = targetRoomName;
       if (parsed.h && !state.hostUid) state.hostUid = parsed.h;
       if (parsed.l && typeof parsed.l === 'object') {
@@ -3488,7 +3512,7 @@
 
       if (isFirebaseReady && db) {
         try {
-          await setDoc(doc(db, `${basePath}/rooms`, targetRoomId), {
+          await setDoc(doc(db, `${getBasePath()}/rooms`, targetRoomId), {
             name: targetRoomName,
             hostUid: state.hostUid || parsed.h || getEffectiveAccountId(),
             customCategoryLabels: state.customCategoryLabels || {},
@@ -3496,14 +3520,14 @@
           }, { merge: true });
           for (const m of state.members) {
             if (m.accountId) {
-              await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
+              await setDoc(doc(db, `${getBasePath()}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
             }
           }
           for (const t of state.tasks) {
-            if (t.id) await setDoc(doc(db, `${basePath}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
+            if (t.id) await setDoc(doc(db, `${getBasePath()}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
           }
           for (const ev of state.events) {
-            if (ev.id) await setDoc(doc(db, `${basePath}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
+            if (ev.id) await setDoc(doc(db, `${getBasePath()}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
           }
         } catch (e) {}
       }
@@ -3684,14 +3708,14 @@
         if (isFirebaseReady && db) {
           for (const t of importedTasks) {
             const tid = t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
-            await setDoc(doc(db, `${basePath}/tasks`, tid), { ...t, id: tid, roomId: targetRoomId }, { merge: true });
+            await setDoc(doc(db, `${getBasePath()}/tasks`, tid), { ...t, id: tid, roomId: targetRoomId }, { merge: true });
           }
           for (const ev of importedEvents) {
             const eid = ev.id || ('ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
-            await setDoc(doc(db, `${basePath}/events`, eid), { ...ev, id: eid, roomId: targetRoomId }, { merge: true });
+            await setDoc(doc(db, `${getBasePath()}/events`, eid), { ...ev, id: eid, roomId: targetRoomId }, { merge: true });
           }
           if (Object.keys(state.customCategoryLabels).length > 0) {
-            await updateDoc(doc(db, `${basePath}/rooms`, targetRoomId), { customCategoryLabels: state.customCategoryLabels });
+            await updateDoc(doc(db, `${getBasePath()}/rooms`, targetRoomId), { customCategoryLabels: state.customCategoryLabels });
           }
         }
         renderAll();
@@ -3814,7 +3838,7 @@
         saveRoomCategoryLabelsLocal(state.roomId, nextLabels);
         if (isFirebaseReady && db) {
           try {
-            await setDoc(doc(db, `${basePath}/rooms`, state.roomId), { customCategoryLabels: nextLabels }, { merge: true });
+            await setDoc(doc(db, `${getBasePath()}/rooms`, state.roomId), { customCategoryLabels: nextLabels }, { merge: true });
           } catch (err) {}
         }
       }
@@ -3991,6 +4015,9 @@
         invitedRoomIdFromUrl = parsed.id;
         invitedRoomNameFromUrl = parsed.name;
         invitedSnapshotFromUrl = parsed.snapshot || null;
+        if (parsed.snapshot && parsed.snapshot.appId) {
+          setActiveAppId(parsed.snapshot.appId);
+        }
         if (parsed.snapshot && parsed.snapshot.h) {
           state.hostUid = parsed.snapshot.h;
         }
@@ -4009,6 +4036,9 @@
         invitedRoomIdFromUrl = parsed.id;
         invitedRoomNameFromUrl = parsed.name;
         invitedSnapshotFromUrl = parsed.snapshot || null;
+        if (parsed.snapshot && parsed.snapshot.appId) {
+          setActiveAppId(parsed.snapshot.appId);
+        }
         if (parsed.name) state.roomName = parsed.name;
         closeCreateGroupModal();
         closeRoomModal();
