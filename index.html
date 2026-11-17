@@ -724,6 +724,26 @@
             <button onclick="applyRoomId()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shrink-0">参加</button>
           </div>
         </div>
+        <!-- 招待コード（同期テキスト）での共有・参加セクション -->
+        <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/80 dark:border-indigo-500/30 flex flex-col gap-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-key text-indigo-600 dark:text-indigo-400"></i>
+              <span>招待コードで確実に共有・参加</span>
+            </span>
+            <button type="button" onclick="copyGroupInviteCode()" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition flex items-center gap-1 shrink-0 shadow-2xs">
+              <i class="fa-regular fa-copy"></i>
+              <span>招待コードをコピー</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-indigo-800/90 dark:text-indigo-300/90 leading-relaxed">
+            別端末や別ブラウザでURLから入れない場合は、ホストがコピーした招待コード（<code class="font-mono">TSYNC:...</code>）を下に貼り付けてください。
+          </p>
+          <div class="flex gap-2">
+            <input type="text" id="input-invite-code" placeholder="TSYNC:... の招待コードを貼り付け" class="flex-1 text-xs font-mono rounded-xl border border-indigo-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2 focus:outline-none">
+            <button type="button" onclick="joinGroupByInviteCode()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shrink-0">コード参加</button>
+          </div>
+        </div>
         <!-- データのバックアップ保存・復元セクション -->
         <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/30 flex flex-col gap-2">
           <div class="flex items-center justify-between">
@@ -1120,7 +1140,6 @@
     // 環境提供の __app_id を最優先で使用（Firestoreセキュリティルール準拠）
     const resolvedAppId = (typeof __app_id !== 'undefined' && __app_id) ? String(__app_id) : 'default-app-id';
     const basePath = `artifacts/${resolvedAppId}/public/data`;
-    const legacySharedBasePath = `artifacts/teamsync-shared/public/data`;
 
     // ==========================================
     // 2. ユーティリティ関数
@@ -1252,11 +1271,57 @@
       }
     }
 
+    function buildGroupInviteCodeString() {
+      if (!state.roomId) return '';
+      const payload = {
+        v: 1,
+        id: state.roomId,
+        name: state.roomName || state.roomId,
+        h: state.hostUid || getEffectiveAccountId(),
+        l: state.customCategoryLabels || {},
+        m: (state.members || []).map(m => ({
+          a: m.accountId || '',
+          n: m.name || '',
+          r: m.role || '',
+          c: m.color || 'indigo'
+        })),
+        t: (state.tasks || []).map(t => ({
+          id: t.id,
+          title: t.title || '',
+          member: t.member || '',
+          status: t.status || '進行中',
+          progress: Number(t.progress || 0),
+          priority: t.priority || '中',
+          tag: t.tag || '',
+          desc: t.desc || '',
+          collaborators: Array.isArray(t.collaborators) ? t.collaborators : [],
+          comments: Array.isArray(t.comments) ? t.comments : [],
+          acknowledgedBy: Array.isArray(t.acknowledgedBy) ? t.acknowledgedBy : [],
+          createdAt: t.createdAt || Date.now(),
+          updatedAt: t.updatedAt || Date.now()
+        })),
+        e: (state.events || []).map(ev => ({
+          id: ev.id,
+          title: ev.title || '',
+          date: ev.date || '',
+          allDay: !!ev.allDay,
+          time: ev.time || '10:00',
+          category: ev.category || 'blue',
+          member: ev.member || '',
+          memo: ev.memo || '',
+          collaborators: Array.isArray(ev.collaborators) ? ev.collaborators : [],
+          createdAt: ev.createdAt || Date.now(),
+          updatedAt: ev.updatedAt || Date.now()
+        }))
+      };
+      const encoded = encodeInvitePayload(payload);
+      return encoded ? `TSYNC:${encoded}` : '';
+    }
+
     function buildInviteShareText(roomId, roomName) {
       const cleanUrl = window.location.href.split('#')[0].split('?')[0];
       const displayTitle = roomName || roomId;
       const nameParam = (roomName && roomName !== roomId) ? `&name=${encodeURIComponent(roomName)}` : '';
-      // メンバー一覧・ホストID・色ラベルを招待URLに同梱（別ブラウザでも即座にメンバー・グループ情報を復元）
       const snapshotPayload = {
         h: state.hostUid || getEffectiveAccountId(),
         m: (state.members || []).slice(0, 15).map(m => ({
@@ -1270,7 +1335,8 @@
       const encodedSnap = encodeInvitePayload(snapshotPayload);
       const snapParam = encodedSnap ? `&inv=${encodeURIComponent(encodedSnap)}` : '';
       const inviteUrl = `${cleanUrl}?room=${encodeURIComponent(roomId)}${nameParam}${snapParam}#room=${encodeURIComponent(roomId)}${nameParam}${snapParam}`;
-      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${inviteUrl}`;
+      const inviteCode = buildGroupInviteCodeString();
+      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${inviteUrl}${inviteCode ? `\n招待コード: ${inviteCode}` : ''}`;
     }
 
     // ==========================================
@@ -1502,48 +1568,19 @@
 
     async function migrateLegacyRoomDataIfAny(targetRoomId) {
       if (!isFirebaseReady || !db || !targetRoomId) return;
-      const legacyPaths = [
-        `${basePath}/rooms/${targetRoomId}`,
-        `${legacySharedBasePath}/rooms/${targetRoomId}`
-      ];
-      for (const prefix of legacyPaths) {
-        try {
-          const legacyTasksSnap = await getDocs(collection(db, `${prefix}/tasks`));
-          if (!legacyTasksSnap.empty) {
-            for (const d of legacyTasksSnap.docs) {
-              const data = d.data();
-              await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
-            }
-          }
-          const legacyEventsSnap = await getDocs(collection(db, `${prefix}/events`));
-          if (!legacyEventsSnap.empty) {
-            for (const d of legacyEventsSnap.docs) {
-              const data = d.data();
-              await setDoc(doc(db, `${basePath}/events`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
-            }
-          }
-          const legacyMembersSnap = await getDocs(collection(db, `${prefix}/members`));
-          if (!legacyMembersSnap.empty) {
-            for (const d of legacyMembersSnap.docs) {
-              const data = d.data();
-              await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${d.id}`), { ...data, roomId: targetRoomId }, { merge: true });
-            }
-          }
-        } catch (e) {}
-      }
-      // 旧フラットパス (teamsync-shared) からの移行も試行
+      const legacyPrefix = `${basePath}/rooms/${targetRoomId}`;
       try {
-        const oldFlatTasks = await getDocs(query(collection(db, `${legacySharedBasePath}/tasks`), where('roomId', '==', targetRoomId)));
-        for (const d of oldFlatTasks.docs) {
+        const legacyTasksSnap = await getDocs(collection(db, `${legacyPrefix}/tasks`));
+        for (const d of legacyTasksSnap.docs) {
           await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
-        const oldFlatEvents = await getDocs(query(collection(db, `${legacySharedBasePath}/events`), where('roomId', '==', targetRoomId)));
-        for (const d of oldFlatEvents.docs) {
+        const legacyEventsSnap = await getDocs(collection(db, `${legacyPrefix}/events`));
+        for (const d of legacyEventsSnap.docs) {
           await setDoc(doc(db, `${basePath}/events`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
-        const oldFlatMembers = await getDocs(query(collection(db, `${legacySharedBasePath}/members`), where('roomId', '==', targetRoomId)));
-        for (const d of oldFlatMembers.docs) {
-          await setDoc(doc(db, `${basePath}/members`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
+        const legacyMembersSnap = await getDocs(collection(db, `${legacyPrefix}/members`));
+        for (const d of legacyMembersSnap.docs) {
+          await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${d.id}`), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
       } catch (e) {}
     }
@@ -3177,9 +3214,111 @@
     window.openRoomModal = function() {
       renderRecentGroupsList();
       document.getElementById('input-room-id').value = '';
+      const invInput = document.getElementById('input-invite-code');
+      if (invInput) invInput.value = '';
       const modal = document.getElementById('room-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+    };
+
+    window.copyGroupInviteCode = function() {
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
+      const codeStr = buildGroupInviteCodeString();
+      if (!codeStr) {
+        showToast('招待コードの生成に失敗しました', 'error');
+        return;
+      }
+      copyTextToClipboard(codeStr);
+      showToast('招待コードをコピーしました！LINEやメールで送信してください');
+    };
+
+    window.joinGroupByInviteCode = async function() {
+      const input = document.getElementById('input-invite-code');
+      const rawVal = (input?.value || '').trim();
+      if (!rawVal) {
+        showToast('招待コードを貼り付けてください', 'error');
+        return;
+      }
+      const match = rawVal.match(/TSYNC:([A-Za-z0-9+/=]+)/);
+      const token = match ? match[1] : rawVal.replace(/^TSYNC:/i, '').trim();
+      const parsed = decodeInvitePayload(token);
+      if (!parsed || !parsed.id) {
+        showToast('招待コードの形式が正しくありません', 'error');
+        return;
+      }
+
+      const targetRoomId = String(parsed.id).trim();
+      const targetRoomName = String(parsed.name || targetRoomId).trim();
+
+      state.roomName = targetRoomName;
+      if (parsed.h) state.hostUid = parsed.h;
+      if (parsed.l && typeof parsed.l === 'object') {
+        state.customCategoryLabels = { ...parsed.l };
+        saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
+      }
+
+      // 同梱されたメンバー・仕事・予定をマージ復元
+      const incomingMembers = Array.isArray(parsed.m) ? parsed.m : [];
+      const incomingTasks = Array.isArray(parsed.t) ? parsed.t : [];
+      const incomingEvents = Array.isArray(parsed.e) ? parsed.e : [];
+
+      loadLocalRoomCache(targetRoomId);
+
+      incomingMembers.forEach(m => {
+        if (!m.a || !m.n) return;
+        const mDocId = `${targetRoomId}_${m.a}`;
+        if (!state.members.some(em => em.accountId === m.a || em.id === mDocId)) {
+          state.members.push({
+            id: mDocId,
+            roomId: targetRoomId,
+            accountId: m.a,
+            uid: m.a,
+            name: m.n,
+            role: m.r || '',
+            color: m.c || 'indigo',
+            updatedAt: Date.now()
+          });
+        }
+      });
+
+      incomingTasks.forEach(t => {
+        if (!t.id) return;
+        if (!state.tasks.some(et => et.id === t.id)) {
+          state.tasks.push({ ...t, roomId: targetRoomId });
+        }
+      });
+
+      incomingEvents.forEach(ev => {
+        if (!ev.id) return;
+        if (!state.events.some(eev => eev.id === ev.id)) {
+          state.events.push({ ...ev, roomId: targetRoomId });
+        }
+      });
+
+      saveLocalRoomCache(targetRoomId);
+      isInvitedViaUrl = true;
+      invitedRoomIdFromUrl = targetRoomId;
+      invitedRoomNameFromUrl = targetRoomName;
+      invitedSnapshotFromUrl = { h: parsed.h, m: incomingMembers, l: parsed.l };
+
+      closeRoomModal();
+      closeCreateGroupModal();
+      await verifyAndEnterRoom(targetRoomId);
+
+      if (isFirebaseReady && db) {
+        try {
+          for (const t of incomingTasks) {
+            if (t.id) await setDoc(doc(db, `${basePath}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
+          }
+          for (const ev of incomingEvents) {
+            if (ev.id) await setDoc(doc(db, `${basePath}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
+          }
+        } catch (e) {}
+      }
+      renderAll();
     };
 
     window.closeRoomModal = function() {
