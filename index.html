@@ -753,11 +753,12 @@
         <h3 class="text-base font-bold text-slate-900 dark:text-white">グループが見つかりません</h3>
       </div>
       <p class="text-xs text-slate-600 dark:text-zinc-300 mb-4 leading-relaxed">
-        指定されたグループID（<span id="not-found-group-id-text" class="font-mono font-bold text-slate-800 dark:text-white"></span>）は存在しないか、すでに削除されています。IDが正しいかご確認のうえ再度お試しください。
+        指定されたグループID（<span id="not-found-group-id-text" class="font-mono font-bold text-slate-800 dark:text-white"></span>）は存在しないか、リセットされています。このIDのままグループを復元するか、別のIDをお試しください。
       </p>
-      <div class="flex justify-end gap-2">
+      <div class="flex flex-wrap justify-end gap-2">
+        <button onclick="restoreGroupFromNotFound()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition">このIDで復元する</button>
         <button onclick="retryCreateGroupFromNotFound()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition">新規作成へ</button>
-        <button onclick="retryRoomIdInput()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">IDを再入力する</button>
+        <button onclick="retryRoomIdInput()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">IDを再入力</button>
       </div>
     </div>
   </div>
@@ -1321,11 +1322,54 @@
             isFirebaseReady = true;
             if (state.roomId) {
               await verifyAndEnterRoom(state.roomId);
+            } else {
+              await tryAutoRecoverJoinedGroup();
             }
           }
         });
       } catch (err) {
         console.error('Firebase init error:', err);
+      }
+    }
+
+    async function tryAutoRecoverJoinedGroup() {
+      if (!isFirebaseReady || !db) return;
+      const myAccId = getEffectiveAccountId();
+      if (!myAccId) return;
+      try {
+        const basePath = getRoomBasePath('');
+        const qMyMembers = query(collection(db, `${basePath}/members`), where('uid', '==', myAccId));
+        const memberSnaps = await getDocs(qMyMembers);
+        const foundRoomIds = [];
+        memberSnaps.forEach(d => {
+          const mData = d.data();
+          if (mData && mData.roomId && mData.roomId !== 'team-alpha') {
+            foundRoomIds.push(mData.roomId);
+            if (mData.name && mData.name !== 'ゲスト') {
+              try {
+                localStorage.setItem(`teamsync_profile_${mData.roomId}`, JSON.stringify({
+                  name: mData.name,
+                  role: mData.role || '',
+                  color: mData.color || 'indigo'
+                }));
+              } catch (e) {}
+            }
+          }
+        });
+
+        if (foundRoomIds.length > 0) {
+          for (const rId of foundRoomIds) {
+            const rSnap = await getDoc(doc(db, `${basePath}/rooms`, rId));
+            const rName = rSnap.exists() ? (rSnap.data().name || rId) : rId;
+            saveGroupToHistory(rId, rName);
+          }
+          closeCreateGroupModal();
+          const targetId = foundRoomIds[0];
+          await verifyAndEnterRoom(targetId);
+          showToast(`参加していたグループ（${state.roomName || targetId}）を復元しました`);
+        }
+      } catch (e) {
+        console.error('tryAutoRecoverJoinedGroup error:', e);
       }
     }
 
@@ -1403,6 +1447,7 @@
         saveGroupToHistory(targetRoomId, state.roomName);
         updateUrlHashState();
         updateRoomUI();
+        await migrateLegacyRoomDataIfAny(targetRoomId);
         subscribeRoomRealtime(targetRoomId);
         await syncMyRoomMemberDoc(targetRoomId);
         return true;
@@ -1410,6 +1455,85 @@
         console.error('verifyAndEnterRoom error:', err);
         showToast('グループの読み込み中にエラーが発生しました', 'error');
         return false;
+      }
+    }
+
+    // 以前のサブコレクション形式（rooms/{roomId}/tasks, events, members）に残っているデータを自動検出・復元
+    async function migrateLegacyRoomDataIfAny(roomId) {
+      if (!isFirebaseReady || !db || !roomId) return;
+      const basePath = getRoomBasePath(roomId);
+      let restoredCount = 0;
+
+      try {
+        // 1. 旧ルームドキュメントのメタデータ（グループ名・色ラベル・ホスト）復元
+        const roomRef = doc(db, `${basePath}/rooms`, roomId);
+        const roomSnap = await getDoc(roomRef);
+        if (roomSnap.exists()) {
+          const rData = roomSnap.data();
+          if (rData.customCategoryLabels && Object.keys(rData.customCategoryLabels).length > 0) {
+            state.customCategoryLabels = rData.customCategoryLabels;
+          }
+        }
+
+        // 2. 旧サブコレクション tasks の確認と復元
+        const legacyTasksSnap = await getDocs(collection(db, `${basePath}/rooms/${roomId}/tasks`));
+        if (!legacyTasksSnap.empty) {
+          for (const d of legacyTasksSnap.docs) {
+            const data = d.data();
+            const targetDocRef = doc(db, `${basePath}/tasks`, d.id);
+            const existsSnap = await getDoc(targetDocRef);
+            if (!existsSnap.exists()) {
+              await setDoc(targetDocRef, {
+                ...data,
+                roomId,
+                updatedAt: data.updatedAt || Date.now()
+              });
+              restoredCount++;
+            }
+          }
+        }
+
+        // 3. 旧サブコレクション events の確認と復元
+        const legacyEventsSnap = await getDocs(collection(db, `${basePath}/rooms/${roomId}/events`));
+        if (!legacyEventsSnap.empty) {
+          for (const d of legacyEventsSnap.docs) {
+            const data = d.data();
+            const targetDocRef = doc(db, `${basePath}/events`, d.id);
+            const existsSnap = await getDoc(targetDocRef);
+            if (!existsSnap.exists()) {
+              await setDoc(targetDocRef, {
+                ...data,
+                roomId,
+                updatedAt: data.updatedAt || Date.now()
+              });
+              restoredCount++;
+            }
+          }
+        }
+
+        // 4. 旧サブコレクション members の確認と復元
+        const legacyMembersSnap = await getDocs(collection(db, `${basePath}/rooms/${roomId}/members`));
+        if (!legacyMembersSnap.empty) {
+          for (const d of legacyMembersSnap.docs) {
+            const data = d.data();
+            const mUid = data.uid || d.id;
+            const targetMemberRef = doc(db, `${basePath}/members`, `${roomId}_${mUid}`);
+            const existsSnap = await getDoc(targetMemberRef);
+            if (!existsSnap.exists()) {
+              await setDoc(targetMemberRef, {
+                ...data,
+                roomId,
+                uid: mUid
+              });
+            }
+          }
+        }
+
+        if (restoredCount > 0) {
+          showToast(`以前保存していた仕事・予定（${restoredCount}件）を復元しました！`);
+        }
+      } catch (e) {
+        console.error('migrateLegacyRoomDataIfAny error:', e);
       }
     }
 
@@ -3142,22 +3266,17 @@
       openCreateGroupModal(!state.roomId);
     };
 
-    window.openProfileModal = function() {
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        openCreateGroupModal(true);
-        return;
+    window.restoreGroupFromNotFound = async function() {
+      const targetId = (document.getElementById('not-found-group-id-text')?.textContent || '').trim();
+      closeGroupNotFoundModal();
+      if (!targetId) return;
+      const historyItem = state.recentGroups.find(g => g.id === targetId);
+      state.roomName = (historyItem && historyItem.name) ? historyItem.name : targetId;
+      state.hostUid = getEffectiveAccountId();
+      const ok = await verifyAndEnterRoom(targetId, { isNewlyCreated: true });
+      if (ok) {
+        showToast(`グループ（${targetId}）を復元しました`);
       }
-      document.getElementById('input-profile-name').value = state.profile.name || '';
-      document.getElementById('input-profile-role').value = state.profile.role || '';
-      state.selectedAvatarColor = state.profile.color || 'indigo';
-      const uidEl = document.getElementById('profile-account-uid');
-      if (uidEl) uidEl.textContent = getEffectiveAccountId() || '未取得';
-
-      renderAvatarColorPicker();
-      const modal = document.getElementById('profile-modal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
     };
 
     window.closeProfileModal = function() {
