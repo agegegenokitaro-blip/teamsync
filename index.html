@@ -727,6 +727,28 @@
             <button onclick="applyRoomId()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shrink-0">参加</button>
           </div>
         </div>
+        <!-- データのバックアップ保存・復元セクション -->
+        <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/30 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-emerald-600 dark:text-emerald-400"></i>
+              <span>データの完全バックアップ・復元</span>
+            </span>
+          </div>
+          <p class="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+            仕事・コメント・予定・色ラベルをファイルに保存しておけば、万が一リセットされてもワンタップで完全に復元できます。
+          </p>
+          <div class="grid grid-cols-2 gap-2 pt-0.5">
+            <button type="button" onclick="exportGroupBackupFile()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs">
+              <i class="fa-solid fa-download"></i>
+              <span>バックアップ保存</span>
+            </button>
+            <button type="button" onclick="triggerImportGroupBackupFile()" class="px-3 py-2 rounded-xl bg-white dark:bg-zinc-800 hover:bg-emerald-100/70 dark:hover:bg-zinc-700 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs">
+              <i class="fa-solid fa-upload"></i>
+              <span>ファイルから復元</span>
+            </button>
+          </div>
+        </div>
         <div class="border-t border-slate-100 dark:border-zinc-800 pt-3 flex items-center justify-between gap-2 flex-wrap">
           <button type="button" onclick="closeRoomModal(); confirmLeaveCurrentGroup();" class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 dark:hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 text-xs font-bold transition flex items-center gap-1.5">
             <i class="fa-solid fa-right-from-bracket"></i>
@@ -740,6 +762,9 @@
       </div>
     </div>
   </div>
+
+  <!-- バックアップファイル選択用隠しinput -->
+  <input type="file" id="input-group-backup-file" accept=".json,application/json" onchange="handleImportGroupBackupFile(event)" class="hidden">
 
   <!-- ========================================== -->
   <!-- モーダル4.8：グループが存在しない場合の警告ポップ -->
@@ -970,6 +995,18 @@
         </div>
 
         <div id="members-manage-list" class="flex flex-col gap-2"></div>
+
+        <!-- グループデータバックアップ・復元クイックボタン -->
+        <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/80 dark:border-emerald-500/30 flex items-center justify-between gap-2 flex-wrap">
+          <div class="text-[11px] font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-emerald-600 dark:text-emerald-400"></i>
+            <span>グループデータのバックアップ・復元</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="exportGroupBackupFile()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition">保存</button>
+            <button type="button" onclick="triggerImportGroupBackupFile()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/40 text-[11px] font-bold transition">復元</button>
+          </div>
+        </div>
 
         <!-- 非ホスト専用：ホストログイン不能時の緊急引き継ぎ・コード復旧パネル -->
         <div id="host-emergency-takeover-panel" class="hidden p-3.5 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700 flex flex-col gap-2.5 mt-1">
@@ -3277,6 +3314,133 @@
       if (ok) {
         showToast(`グループ（${targetId}）を復元しました`);
       }
+    };
+
+    // ==========================================
+    // 8.5. グループ全データのバックアップ書き出し・復元機能
+    // ==========================================
+    window.exportGroupBackupFile = function() {
+      if (!state.roomId) {
+        showToast('バックアップするグループに先に入室してください', 'info');
+        return;
+      }
+      const backupPayload = {
+        app: 'TeamSync',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        room: {
+          id: state.roomId,
+          name: state.roomName || state.roomId,
+          customCategoryLabels: state.customCategoryLabels || {}
+        },
+        tasks: state.tasks.map(({ id, ...rest }) => rest),
+        events: state.events.map(({ id, ...rest }) => rest)
+      };
+
+      const jsonStr = JSON.stringify(backupPayload, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const safeName = (state.roomName || state.roomId).replace(/[\\/:*?"<>|]/g, '_');
+      const dateTag = getTodayStr();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `TeamSync_${safeName}_${dateTag}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`バックアップファイル（${a.download}）を保存しました！`);
+    };
+
+    window.triggerImportGroupBackupFile = function() {
+      const fileInput = document.getElementById('input-group-backup-file');
+      if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+      }
+    };
+
+    window.handleImportGroupBackupFile = async function(event) {
+      const file = event.target?.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!data || data.app !== 'TeamSync' || !data.room || !data.room.id) {
+          showToast('有効なTeamSyncバックアップファイルではありません', 'error');
+          return;
+        }
+
+        const targetRoomId = String(data.room.id).trim();
+        const targetRoomName = String(data.room.name || targetRoomId).trim();
+        const importedTasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const importedEvents = Array.isArray(data.events) ? data.events : [];
+        const importedLabels = (data.room.customCategoryLabels && typeof data.room.customCategoryLabels === 'object')
+          ? data.room.customCategoryLabels
+          : {};
+
+        closeRoomModal();
+        closeMembersManageModal();
+        closeCreateGroupModal();
+
+        state.roomName = targetRoomName;
+        state.hostUid = getEffectiveAccountId();
+        state.customCategoryLabels = importedLabels;
+
+        const entered = await verifyAndEnterRoom(targetRoomId, { isNewlyCreated: true });
+        if (!entered) return;
+
+        if (isFirebaseReady && db) {
+          const basePath = getRoomBasePath(targetRoomId);
+          await setDoc(doc(db, `${basePath}/rooms`, targetRoomId), {
+            name: targetRoomName,
+            customCategoryLabels: importedLabels,
+            updatedAt: Date.now()
+          }, { merge: true });
+
+          const tasksCol = collection(db, `${basePath}/tasks`);
+          for (const t of importedTasks) {
+            await addDoc(tasksCol, {
+              ...t,
+              roomId: targetRoomId,
+              updatedAt: t.updatedAt || Date.now()
+            });
+          }
+
+          const eventsCol = collection(db, `${basePath}/events`);
+          for (const ev of importedEvents) {
+            await addDoc(eventsCol, {
+              ...ev,
+              roomId: targetRoomId,
+              updatedAt: ev.updatedAt || Date.now()
+            });
+          }
+        }
+
+        showToast(`「${targetRoomName}」を復元しました（仕事 ${importedTasks.length}件・予定 ${importedEvents.length}件）`);
+      } catch (err) {
+        console.error('handleImportGroupBackupFile error:', err);
+        showToast('バックアップファイルの読み込みに失敗しました', 'error');
+      }
+    };
+
+    window.openProfileModal = function() {
+      if (!state.roomId) {
+        showToast('先にグループを作成または選択してください', 'info');
+        return;
+      }
+      document.getElementById('input-profile-name').value = state.profile.name === 'ゲスト' ? '' : state.profile.name;
+      document.getElementById('input-profile-role').value = state.profile.role || '';
+      state.selectedAvatarColor = state.profile.color || 'indigo';
+      renderAvatarColorPicker();
+      const uidEl = document.getElementById('profile-account-uid');
+      if (uidEl) uidEl.textContent = getEffectiveAccountId() || '未取得';
+      const importInput = document.getElementById('input-import-account-id');
+      if (importInput) importInput.value = '';
+      const modal = document.getElementById('profile-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
     };
 
     window.closeProfileModal = function() {
