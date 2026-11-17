@@ -294,17 +294,15 @@
               <p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">メンバーの作業内容・進捗率・共同作業者をリアルタイム共有</p>
             </div>
             <div class="flex items-center gap-1.5">
-              <!-- 詳細モード / シンプルモード 2アイコン並列トグル切替ボタン（ボタン内のどこをタップしても切替） -->
+              <!-- 詳細モード / シンプルモード 2アイコン並列トグル切替ボタン -->
               <button type="button" onclick="toggleTaskDisplayDensity()" id="btn-density-toggle" class="flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/70 dark:border-zinc-700 shrink-0 cursor-pointer transition hover:border-indigo-300 dark:hover:border-indigo-500/40" aria-label="表示モード切替" title="タップで詳細モード / シンプルモードを切り替え">
                 <span id="btn-density-detail" class="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition pointer-events-none">
-                  <!-- 上下2段の角丸長方形アイコン -->
                   <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                     <rect x="2" y="2.2" width="12" height="4.6" rx="1.4" />
                     <rect x="2" y="9.2" width="12" height="4.6" rx="1.4" />
                   </svg>
                 </span>
                 <span id="btn-density-simple" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-zinc-500 transition pointer-events-none">
-                  <!-- 2×2の角丸正方形アイコン -->
                   <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                     <rect x="2" y="2" width="4.8" height="4.8" rx="1.3" />
                     <rect x="9.2" y="2" width="4.8" height="4.8" rx="1.3" />
@@ -380,7 +378,6 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 id="calendar-month-label" class="text-base sm:text-lg font-bold text-slate-800 dark:text-white">2026年 1月</h3>
             <div class="flex items-center gap-1.5">
-              <!-- 色分け絞り込みトグルボタン（初期はボタンのみ表示） -->
               <button type="button" onclick="toggleColorFilterDrawer()" id="btn-toggle-color-filter" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-200 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200/80 dark:hover:bg-zinc-700 border border-slate-200/80 dark:border-zinc-700 px-2.5 py-1.5 rounded-xl transition">
                 <i class="fa-solid fa-filter text-[11px] text-indigo-600 dark:text-indigo-400"></i>
                 <span>色分け絞り込み</span>
@@ -407,7 +404,7 @@
         </div>
 
         <!-- 格子状カレンダーグリッド -->
-        <div class="p-2.5 sm:p-4">
+        <div class="p-2 sm:p-3.5">
           <div class="border border-slate-200/90 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-2xs">
             <div class="grid grid-cols-7 border-b border-slate-200/90 dark:border-zinc-800 bg-slate-50/90 dark:bg-zinc-800/70 text-center text-[11px] font-bold">
               <div class="py-1.5 text-rose-500 dark:text-rose-400 border-r border-slate-200/80 dark:border-zinc-800">日</div>
@@ -982,7 +979,7 @@
           </p>
         </div>
 
-        <!-- 緊急引き継ぎ同意投票パネル（申請進行中に全員へ表示） -->
+        <!-- 緊急引き継ぎ同意投票パネル -->
         <div id="host-claim-voting-panel" class="hidden p-3.5 rounded-xl bg-indigo-50/90 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/30 flex flex-col gap-2.5">
           <div class="flex items-start justify-between gap-2">
             <div>
@@ -1098,7 +1095,7 @@
       recentGroups: [],
       mainTab: 'both',
       taskViewMode: 'cards',
-      taskDisplayDensity: 'detail', // 'detail' | 'simple'
+      taskDisplayDensity: 'detail',
       selectedTaskCollaborators: [],
       selectedEventCollaborators: [],
       selectedEventColors: [],
@@ -1117,6 +1114,10 @@
     let unsubEvents = null;
     let isInvitedViaUrl = false;
     let invitedRoomIdFromUrl = '';
+    let invitedRoomNameFromUrl = '';
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'teamsync-default';
+    const basePath = `artifacts/${appId}/public/data`;
 
     // ==========================================
     // 2. ユーティリティ関数
@@ -1131,61 +1132,11 @@
         .replace(/'/g, '&#39;');
     }
 
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-      const el = document.createElement('div');
-      const icon = type === 'error' ? 'fa-circle-exclamation text-rose-400' : type === 'info' ? 'fa-circle-info text-indigo-400' : 'fa-circle-check text-emerald-400';
-      el.className = 'pointer-events-auto bg-slate-900/95 dark:bg-zinc-800/95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg border border-slate-700/80 flex items-center gap-2 transition-all duration-300';
-      el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${escapeHtml(message)}</span>`;
-      container.appendChild(el);
-      setTimeout(() => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(6px)';
-        setTimeout(() => el.remove(), 300);
-      }, 2800);
-    }
-
-    function copyTextToClipboard(text) {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-      } else {
-        fallbackCopy(text);
-      }
-    }
-
-    function fallbackCopy(text) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); } catch (e) {}
-      document.body.removeChild(ta);
-    }
-
-    function generateRandomGroupId() {
-      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let res = 'grp-';
-      for (let i = 0; i < 6; i++) res += chars[Math.floor(Math.random() * chars.length)];
-      return res;
-    }
-
-    function generateHostRecoveryCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-      return code;
-    }
-
-    function getTodayStr() {
-      const d = new Date();
-      return formatDateStr(d.getFullYear(), d.getMonth(), d.getDate());
-    }
-
-    function formatDateStr(y, m, d) {
-      return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    function formatDateStr(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
 
     function getAvatarBgClass(colorId) {
@@ -1193,38 +1144,85 @@
       return found ? found.bg : 'bg-indigo-600';
     }
 
-    function getEffectiveAccountId() {
-      return state.accountId || state.uid || '';
+    function getCategoryMeta(key) {
+      const found = EVENT_COLORS.find(c => c.key === key) || EVENT_COLORS[0];
+      const customName = state.customCategoryLabels && state.customCategoryLabels[found.key];
+      return {
+        ...found,
+        label: (customName && customName.trim()) ? customName.trim() : found.defaultLabel
+      };
     }
 
-    function initPersistentAccountId() {
-      const hash = window.location.hash || '';
-      const accMatch = hash.match(/acc=([^&]+)/);
-      if (accMatch && accMatch[1]) {
-        const fromHash = decodeURIComponent(accMatch[1]).trim();
-        if (fromHash) {
-          state.accountId = fromHash;
-          try { localStorage.setItem('teamsync_persistent_account_id', fromHash); } catch (e) {}
-          return;
-        }
-      }
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const el = document.createElement('div');
+      const colors = type === 'error'
+        ? 'bg-rose-600 text-white'
+        : type === 'info'
+          ? 'bg-slate-800 dark:bg-zinc-800 text-white border border-slate-700'
+          : 'bg-emerald-600 text-white';
+      el.className = `${colors} px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2 pointer-events-auto transition-all duration-300`;
+      const icon = type === 'error' ? 'fa-circle-exclamation' : type === 'info' ? 'fa-circle-info' : 'fa-circle-check';
+      el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${escapeHtml(message)}</span>`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(6px)';
+        setTimeout(() => el.remove(), 300);
+      }, 3200);
+    }
+
+    function copyTextToClipboard(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
       try {
-        const saved = localStorage.getItem('teamsync_persistent_account_id');
-        if (saved) {
-          state.accountId = saved;
-          return;
-        }
-        const generated = 'acc-' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36).slice(-4);
-        state.accountId = generated;
-        localStorage.setItem('teamsync_persistent_account_id', generated);
-      } catch (e) {
-        state.accountId = 'acc-' + Math.random().toString(36).substring(2, 10);
+        document.execCommand('copy');
+      } catch (e) {}
+      document.body.removeChild(textarea);
+    }
+
+    function generateRandomGroupId() {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let res = 'grp-';
+      for (let i = 0; i < 6; i++) {
+        res += chars[Math.floor(Math.random() * chars.length)];
       }
+      return res;
+    }
+
+    function generateHostRecoveryCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
+    }
+
+    function getEffectiveAccountId() {
+      return state.accountId || state.uid || 'acc-local';
+    }
+
+    function hideSplashScreenAfterAnimation() {
+      const splash = document.getElementById('app-splash-screen');
+      if (!splash) return;
+      setTimeout(() => {
+        splash.classList.add('splash-hide');
+        setTimeout(() => splash.remove(), 500);
+      }, 1150);
     }
 
     function updateUrlHashState() {
       const parts = [];
       if (state.roomId) parts.push(`room=${encodeURIComponent(state.roomId)}`);
+      if (state.roomName && state.roomName !== state.roomId) {
+        parts.push(`name=${encodeURIComponent(state.roomName)}`);
+      }
       if (state.accountId) parts.push(`acc=${encodeURIComponent(state.accountId)}`);
       if (parts.length > 0) {
         try {
@@ -1233,65 +1231,77 @@
       }
     }
 
+    function buildInviteShareText(roomId, roomName) {
+      const baseUrl = window.location.href.split('#')[0];
+      const displayTitle = roomName || roomId;
+      const nameParam = (roomName && roomName !== roomId) ? `&name=${encodeURIComponent(roomName)}` : '';
+      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${baseUrl}#room=${encodeURIComponent(roomId)}${nameParam}`;
+    }
+
     // ==========================================
     // 3. テーマ・履歴・プロフィールローカル保存
     // ==========================================
     function initTheme() {
-      const saved = localStorage.getItem('teamsync_theme');
+      const savedTheme = localStorage.getItem('teamsync_theme');
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const isDark = saved ? saved === 'dark' : prefersDark;
-      applyTheme(isDark);
+      const isDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+      document.documentElement.classList.toggle('dark', isDark);
+      updateThemeToggleUI(isDark);
     }
 
-    function applyTheme(isDark) {
+    window.toggleDarkMode = function() {
+      const isDark = !document.documentElement.classList.contains('dark');
       document.documentElement.classList.toggle('dark', isDark);
+      localStorage.setItem('teamsync_theme', isDark ? 'dark' : 'light');
+      updateThemeToggleUI(isDark);
+    };
+
+    function updateThemeToggleUI(isDark) {
       const icon = document.getElementById('theme-toggle-icon');
       const label = document.getElementById('theme-toggle-label');
       if (icon) icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
       if (label) label.textContent = isDark ? 'ライト' : 'ダーク';
     }
 
-    window.toggleDarkMode = function() {
-      const isDark = !document.documentElement.classList.contains('dark');
-      localStorage.setItem('teamsync_theme', isDark ? 'dark' : 'light');
-      applyTheme(isDark);
-    };
+    function initPersistentAccountId() {
+      const hashAccMatch = window.location.hash.match(/acc=([^&]+)/);
+      let accId = (hashAccMatch && hashAccMatch[1]) ? decodeURIComponent(hashAccMatch[1]).trim() : '';
+      if (!accId) {
+        accId = localStorage.getItem('teamsync_account_id') || '';
+      }
+      if (!accId) {
+        accId = 'acc-' + Math.random().toString(36).substring(2, 10);
+      }
+      state.accountId = accId;
+      localStorage.setItem('teamsync_account_id', accId);
+    }
 
     function loadGroupHistory() {
       try {
         const raw = localStorage.getItem('teamsync_recent_groups');
-        const list = raw ? JSON.parse(raw) : [];
-        state.recentGroups = Array.isArray(list) ? list.filter(g => g && g.id && g.id !== 'team-alpha') : [];
+        const parsed = raw ? JSON.parse(raw) : [];
+        state.recentGroups = Array.isArray(parsed) ? parsed : [];
       } catch (e) {
         state.recentGroups = [];
       }
     }
 
-    function saveGroupToHistory(id, name) {
-      if (!id || id === 'team-alpha') return;
-      const filtered = state.recentGroups.filter(g => g.id !== id);
-      filtered.unshift({ id, name: name || id, updatedAt: Date.now() });
-      state.recentGroups = filtered.slice(0, 10);
-      try {
-        localStorage.setItem('teamsync_recent_groups', JSON.stringify(state.recentGroups));
-      } catch (e) {}
-    }
-
-    function removeGroupFromHistory(id) {
-      state.recentGroups = state.recentGroups.filter(g => g.id !== id);
-      try {
-        localStorage.setItem('teamsync_recent_groups', JSON.stringify(state.recentGroups));
-      } catch (e) {}
+    function saveGroupToHistory(roomId, roomName) {
+      if (!roomId) return;
+      const existing = state.recentGroups.find(g => g.id === roomId);
+      const resolvedName = (roomName && roomName !== roomId)
+        ? roomName
+        : (existing && existing.name && existing.name !== roomId)
+          ? existing.name
+          : (roomName || roomId);
+      const filtered = state.recentGroups.filter(g => g.id !== roomId);
+      filtered.unshift({ id: roomId, name: resolvedName, lastVisited: Date.now() });
+      state.recentGroups = filtered.slice(0, 20);
+      localStorage.setItem('teamsync_recent_groups', JSON.stringify(state.recentGroups));
     }
 
     function loadRoomProfileLocal(roomId) {
       if (!roomId) return;
-      try {
-        const savedLabels = localStorage.getItem(`teamsync_category_labels_${roomId}`);
-        state.customCategoryLabels = savedLabels ? JSON.parse(savedLabels) : {};
-      } catch (e) {
-        state.customCategoryLabels = {};
-      }
       try {
         const raw = localStorage.getItem(`teamsync_profile_${roomId}`);
         if (raw) {
@@ -1301,86 +1311,98 @@
             role: parsed.role || '',
             color: parsed.color || 'indigo'
           };
-          return;
+        } else {
+          const globalName = localStorage.getItem('teamsync_last_name') || 'ゲスト';
+          const globalRole = localStorage.getItem('teamsync_last_role') || '';
+          const globalColor = localStorage.getItem('teamsync_last_color') || 'indigo';
+          state.profile = { name: globalName, role: globalRole, color: globalColor };
         }
-        const lastName = localStorage.getItem('teamsync_last_username');
-        state.profile = {
-          name: lastName || 'ゲスト',
-          role: '',
-          color: 'indigo'
-        };
-      } catch (e) {}
+      } catch (e) {
+        state.profile = { name: 'ゲスト', role: '', color: 'indigo' };
+      }
     }
 
-    function saveRoomCategoryLabelsLocal(roomId, labels) {
+    function saveRoomProfileLocal(roomId, profileObj) {
+      if (!roomId) return;
+      localStorage.setItem(`teamsync_profile_${roomId}`, JSON.stringify(profileObj));
+      localStorage.setItem('teamsync_last_name', profileObj.name || 'ゲスト');
+      localStorage.setItem('teamsync_last_role', profileObj.role || '');
+      localStorage.setItem('teamsync_last_color', profileObj.color || 'indigo');
+    }
+
+    function loadRoomCategoryLabelsLocal(roomId) {
+      if (!roomId) return {};
+      try {
+        const raw = localStorage.getItem(`teamsync_catlabels_${roomId}`);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveRoomCategoryLabelsLocal(roomId, labelsObj) {
+      if (!roomId) return;
+      localStorage.setItem(`teamsync_catlabels_${roomId}`, JSON.stringify(labelsObj || {}));
+    }
+
+    function loadLocalRoomCache(roomId) {
       if (!roomId) return;
       try {
-        localStorage.setItem(`teamsync_category_labels_${roomId}`, JSON.stringify(labels || {}));
+        const tRaw = localStorage.getItem(`teamsync_tasks_${roomId}`);
+        if (tRaw) state.tasks = JSON.parse(tRaw);
+        const eRaw = localStorage.getItem(`teamsync_events_${roomId}`);
+        if (eRaw) state.events = JSON.parse(eRaw);
+        const mRaw = localStorage.getItem(`teamsync_members_${roomId}`);
+        if (mRaw) state.members = JSON.parse(mRaw);
       } catch (e) {}
     }
 
-    function loadRoomOfflineDataLocal(roomId) {
-      if (!roomId) return;
-      try {
-        const rawTasks = localStorage.getItem(`teamsync_tasks_${roomId}`);
-        if (rawTasks) state.tasks = JSON.parse(rawTasks);
-      } catch (e) {}
-      try {
-        const rawEvents = localStorage.getItem(`teamsync_events_${roomId}`);
-        if (rawEvents) state.events = JSON.parse(rawEvents);
-      } catch (e) {}
-    }
-
-    function saveRoomOfflineDataLocal(roomId) {
+    function saveLocalRoomCache(roomId) {
       if (!roomId) return;
       try {
         localStorage.setItem(`teamsync_tasks_${roomId}`, JSON.stringify(state.tasks || []));
         localStorage.setItem(`teamsync_events_${roomId}`, JSON.stringify(state.events || []));
-      } catch (e) {}
-    }
-
-    function saveRoomProfileLocal() {
-      if (!state.roomId) return;
-      try {
-        localStorage.setItem(`teamsync_profile_${state.roomId}`, JSON.stringify(state.profile));
-        if (state.profile.name && state.profile.name !== 'ゲスト') {
-          localStorage.setItem('teamsync_last_username', state.profile.name);
-        }
+        localStorage.setItem(`teamsync_members_${roomId}`, JSON.stringify(state.members || []));
       } catch (e) {}
     }
 
     function updateRoomUI() {
       const nameEl = document.getElementById('display-room-name');
       const idEl = document.getElementById('display-room-id');
-      if (nameEl) nameEl.textContent = state.roomName || (state.roomId ? state.roomId : 'グループ未選択');
+      if (nameEl) nameEl.textContent = state.roomName || state.roomId || 'グループ未選択';
       if (idEl) idEl.textContent = state.roomId || '未選択';
     }
 
     function updateProfileUI() {
-      const avatarEl = document.getElementById('header-user-avatar');
       const nameEl = document.getElementById('header-user-name');
       const roleEl = document.getElementById('header-user-role');
-      const name = state.profile.name || 'ゲスト';
-      if (avatarEl) {
-        avatarEl.className = `w-6 h-6 rounded-lg ${getAvatarBgClass(state.profile.color)} text-white flex items-center justify-center text-[11px] font-bold shadow-2xs shrink-0`;
-        avatarEl.textContent = name.charAt(0);
+      const avatarEl = document.getElementById('header-user-avatar');
+      const displayName = state.profile.name || 'ゲスト';
+      if (nameEl) nameEl.textContent = displayName;
+      if (roleEl) {
+        roleEl.textContent = state.profile.role || '役割未設定';
+        roleEl.classList.toggle('hidden', !state.profile.role);
       }
-      if (nameEl) nameEl.textContent = name;
-      if (roleEl) roleEl.textContent = state.profile.role || '役割未設定';
+      if (avatarEl) {
+        avatarEl.textContent = displayName.trim().charAt(0) || 'ゲ';
+        avatarEl.className = `w-6 h-6 rounded-lg ${getAvatarBgClass(state.profile.color)} text-white flex items-center justify-center text-[11px] font-bold shadow-2xs shrink-0`;
+      }
     }
 
     // ==========================================
-    // 4. Firebase 初期化 & リアルタイム同期
+    // 4. Firebase 初期化・リアルタイム同期
     // ==========================================
-    function getRoomBasePath(roomId) {
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-      return `artifacts/${appId}/public/data`;
-    }
-
     async function initFirebase() {
       try {
         if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-          console.warn('Firebase config not found');
+          isFirebaseReady = false;
+          if (state.roomId) {
+            loadRoomProfileLocal(state.roomId);
+            state.customCategoryLabels = loadRoomCategoryLabelsLocal(state.roomId);
+            loadLocalRoomCache(state.roomId);
+            updateProfileUI();
+            renderAll();
+          }
           return;
         }
         const firebaseConfig = JSON.parse(__firebase_config);
@@ -1388,108 +1410,132 @@
         auth = getAuth(app);
         db = getFirestore(app);
 
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-
         onAuthStateChanged(auth, async (user) => {
           if (user) {
             state.uid = user.uid;
             isFirebaseReady = true;
             if (state.roomId) {
+              loadRoomProfileLocal(state.roomId);
+              state.customCategoryLabels = loadRoomCategoryLabelsLocal(state.roomId);
+              updateProfileUI();
               await verifyAndEnterRoom(state.roomId);
             } else {
-              await tryAutoRecoverJoinedGroup();
-            }
-          }
-        });
-      } catch (err) {
-        console.error('Firebase init error:', err);
-      }
-    }
-
-    async function tryAutoRecoverJoinedGroup() {
-      if (!isFirebaseReady || !db) return;
-      const myAccId = getEffectiveAccountId();
-      if (!myAccId) return;
-      try {
-        const basePath = getRoomBasePath('');
-        const qMyMembers = query(collection(db, `${basePath}/members`), where('uid', '==', myAccId));
-        const memberSnaps = await getDocs(qMyMembers);
-        const foundRoomIds = [];
-        memberSnaps.forEach(d => {
-          const mData = d.data();
-          if (mData && mData.roomId && mData.roomId !== 'team-alpha') {
-            foundRoomIds.push(mData.roomId);
-            if (mData.name && mData.name !== 'ゲスト') {
-              try {
-                localStorage.setItem(`teamsync_profile_${mData.roomId}`, JSON.stringify({
-                  name: mData.name,
-                  role: mData.role || '',
-                  color: mData.color || 'indigo'
-                }));
-              } catch (e) {}
+              await tryAutoDiscoverJoinedGroup();
             }
           }
         });
 
-        if (foundRoomIds.length > 0) {
-          for (const rId of foundRoomIds) {
-            const rSnap = await getDoc(doc(db, `${basePath}/rooms`, rId));
-            const rName = rSnap.exists() ? (rSnap.data().name || rId) : rId;
-            saveGroupToHistory(rId, rName);
-          }
-          closeCreateGroupModal();
-          const targetId = foundRoomIds[0];
-          await verifyAndEnterRoom(targetId);
-          showToast(`参加していたグループ（${state.roomName || targetId}）を復元しました`);
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
-      } catch (e) {
-        console.error('tryAutoRecoverJoinedGroup error:', e);
+      } catch (err) {
+        console.warn('Firebase init fallback to local:', err);
+        isFirebaseReady = false;
+        if (state.roomId) {
+          loadRoomProfileLocal(state.roomId);
+          state.customCategoryLabels = loadRoomCategoryLabelsLocal(state.roomId);
+          loadLocalRoomCache(state.roomId);
+          updateProfileUI();
+          renderAll();
+        }
       }
     }
 
-    function detachRoomListeners() {
-      if (unsubRoomMeta) { unsubRoomMeta(); unsubRoomMeta = null; }
-      if (unsubMembers) { unsubMembers(); unsubMembers = null; }
-      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
-      if (unsubEvents) { unsubEvents(); unsubEvents = null; }
+    async function tryAutoDiscoverJoinedGroup() {
+      if (!isFirebaseReady || !db) return;
+      try {
+        const myAccId = getEffectiveAccountId();
+        const qMembers = query(collection(db, `${basePath}/members`), where('accountId', '==', myAccId));
+        const snap = await getDocs(qMembers);
+        if (!snap.empty) {
+          let latest = null;
+          snap.forEach(d => {
+            const data = d.data();
+            if (data.roomId && (!latest || (data.updatedAt || 0) > (latest.updatedAt || 0))) {
+              latest = data;
+            }
+          });
+          if (latest && latest.roomId) {
+            closeCreateGroupModal();
+            await verifyAndEnterRoom(latest.roomId);
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function migrateLegacyRoomDataIfAny(targetRoomId) {
+      if (!isFirebaseReady || !db || !targetRoomId) return;
+      try {
+        const legacyTasksSnap = await getDocs(collection(db, `${basePath}/rooms/${targetRoomId}/tasks`));
+        if (!legacyTasksSnap.empty) {
+          for (const d of legacyTasksSnap.docs) {
+            const data = d.data();
+            await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
+          }
+        }
+        const legacyEventsSnap = await getDocs(collection(db, `${basePath}/rooms/${targetRoomId}/events`));
+        if (!legacyEventsSnap.empty) {
+          for (const d of legacyEventsSnap.docs) {
+            const data = d.data();
+            await setDoc(doc(db, `${basePath}/events`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
+          }
+        }
+        const legacyMembersSnap = await getDocs(collection(db, `${basePath}/rooms/${targetRoomId}/members`));
+        if (!legacyMembersSnap.empty) {
+          for (const d of legacyMembersSnap.docs) {
+            const data = d.data();
+            await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${d.id}`), { ...data, roomId: targetRoomId }, { merge: true });
+          }
+        }
+      } catch (e) {}
     }
 
     async function verifyAndEnterRoom(targetRoomId, options = {}) {
-      if (!targetRoomId || targetRoomId === 'team-alpha') return false;
+      if (!targetRoomId) return false;
       loadRoomProfileLocal(targetRoomId);
-      loadRoomOfflineDataLocal(targetRoomId);
+      const localLabels = loadRoomCategoryLabelsLocal(targetRoomId);
+      if (Object.keys(localLabels).length > 0) {
+        state.customCategoryLabels = { ...localLabels, ...state.customCategoryLabels };
+      }
+      loadLocalRoomCache(targetRoomId);
       updateProfileUI();
 
       if (!isFirebaseReady || !db) {
         state.roomId = targetRoomId;
-        updateRoomUI();
+        if (!state.roomName) state.roomName = targetRoomId;
+        if (!state.hostUid) state.hostUid = getEffectiveAccountId();
+        saveGroupToHistory(targetRoomId, state.roomName);
         updateUrlHashState();
-        renderActiveMembersBar();
-        renderCalendarLegend();
-        renderEventCategoryControls();
-        renderTasks();
-        renderCalendar();
-        renderEventsList();
+        updateRoomUI();
+        renderAll();
         return true;
       }
 
-      const basePath = getRoomBasePath(targetRoomId);
       const roomDocRef = doc(db, `${basePath}/rooms`, targetRoomId);
-
       try {
         const snap = await getDoc(roomDocRef);
         const myAccId = getEffectiveAccountId();
 
         if (!snap.exists() && !options.isNewlyCreated) {
-          // 履歴やURLハッシュからの復帰時は削除せず、同IDで復元できるように案内
-          const isFromHistoryOrHash = state.recentGroups.some(g => g.id === targetRoomId) || isInvitedViaUrl || (window.location.hash || '').includes(encodeURIComponent(targetRoomId));
-          if (isFromHistoryOrHash) {
-            const historyItem = state.recentGroups.find(g => g.id === targetRoomId);
-            const restoredName = (historyItem && historyItem.name) ? historyItem.name : targetRoomId;
+          let hasExistingRoomRecords = false;
+          try {
+            const mSnap = await getDocs(query(collection(db, `${basePath}/members`), where('roomId', '==', targetRoomId)));
+            const tSnap = await getDocs(query(collection(db, `${basePath}/tasks`), where('roomId', '==', targetRoomId)));
+            const eSnap = await getDocs(query(collection(db, `${basePath}/events`), where('roomId', '==', targetRoomId)));
+            hasExistingRoomRecords = !mSnap.empty || !tSnap.empty || !eSnap.empty;
+          } catch (e) {}
+
+          const historyItem = state.recentGroups.find(g => g.id === targetRoomId);
+          const knownName = (invitedRoomIdFromUrl === targetRoomId && invitedRoomNameFromUrl)
+            ? invitedRoomNameFromUrl
+            : (historyItem && historyItem.name && historyItem.name !== targetRoomId)
+              ? historyItem.name
+              : '';
+
+          if (hasExistingRoomRecords || historyItem) {
+            const restoredName = knownName || targetRoomId;
             const newCode = generateHostRecoveryCode();
             state.roomName = restoredName;
             state.hostUid = myAccId;
@@ -1505,7 +1551,10 @@
             }, { merge: true });
             showToast(`グループ「${restoredName}」に参加しました`, 'info');
           } else {
-            showGroupNotFoundModal(targetRoomId);
+            if (knownName) {
+              state.roomName = knownName;
+            }
+            showGroupNotFoundModal(targetRoomId, knownName);
             return false;
           }
         } else if (options.isNewlyCreated) {
@@ -1521,7 +1570,7 @@
           }, { merge: true });
         } else if (snap.exists()) {
           const data = snap.data();
-          state.roomName = data.name || targetRoomId;
+          state.roomName = data.name || (invitedRoomIdFromUrl === targetRoomId && invitedRoomNameFromUrl) || targetRoomId;
           state.hostUid = data.hostUid || '';
           state.hostRecoveryCode = data.hostRecoveryCode || '';
           state.hostClaim = data.hostClaim || null;
@@ -1539,9 +1588,9 @@
         subscribeRoomRealtime(targetRoomId);
         await syncMyRoomMemberDoc(targetRoomId);
 
-        // 招待リンクから初参加で表示名がまだ「ゲスト」の場合は名前入力モーダルを開く
         if (isInvitedViaUrl && invitedRoomIdFromUrl === targetRoomId) {
           isInvitedViaUrl = false;
+          invitedRoomNameFromUrl = '';
           if (!state.profile.name || state.profile.name === 'ゲスト') {
             setTimeout(() => {
               openProfileModal();
@@ -1554,266 +1603,167 @@
         return true;
       } catch (err) {
         console.error('verifyAndEnterRoom error:', err);
-        showToast('グループの読み込み中にエラーが発生しました', 'error');
-        return false;
+        state.roomId = targetRoomId;
+        saveGroupToHistory(targetRoomId, state.roomName || targetRoomId);
+        updateRoomUI();
+        renderAll();
+        return true;
       }
     }
 
-    // 以前のサブコレクション形式（rooms/{roomId}/tasks, events, members）に残っているデータを自動検出・復元
-    async function migrateLegacyRoomDataIfAny(roomId) {
-      if (!isFirebaseReady || !db || !roomId) return;
-      const basePath = getRoomBasePath(roomId);
-      let restoredCount = 0;
+    function subscribeRoomRealtime(targetRoomId) {
+      if (unsubRoomMeta) { unsubRoomMeta(); unsubRoomMeta = null; }
+      if (unsubMembers) { unsubMembers(); unsubMembers = null; }
+      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
+      if (unsubEvents) { unsubEvents(); unsubEvents = null; }
 
-      try {
-        // 1. 旧ルームドキュメントのメタデータ（グループ名・色ラベル・ホスト）復元
-        const roomRef = doc(db, `${basePath}/rooms`, roomId);
-        const roomSnap = await getDoc(roomRef);
-        if (roomSnap.exists()) {
-          const rData = roomSnap.data();
-          if (rData.customCategoryLabels && Object.keys(rData.customCategoryLabels).length > 0) {
-            state.customCategoryLabels = rData.customCategoryLabels;
-          }
-        }
+      if (!isFirebaseReady || !db || !targetRoomId) return;
 
-        // 2. 旧サブコレクション tasks の確認と復元
-        const legacyTasksSnap = await getDocs(collection(db, `${basePath}/rooms/${roomId}/tasks`));
-        if (!legacyTasksSnap.empty) {
-          for (const d of legacyTasksSnap.docs) {
-            const data = d.data();
-            const targetDocRef = doc(db, `${basePath}/tasks`, d.id);
-            const existsSnap = await getDoc(targetDocRef);
-            if (!existsSnap.exists()) {
-              await setDoc(targetDocRef, {
-                ...data,
-                roomId,
-                updatedAt: data.updatedAt || Date.now()
-              });
-              restoredCount++;
-            }
-          }
-        }
-
-        // 3. 旧サブコレクション events の確認と復元
-        const legacyEventsSnap = await getDocs(collection(db, `${basePath}/rooms/${roomId}/events`));
-        if (!legacyEventsSnap.empty) {
-          for (const d of legacyEventsSnap.docs) {
-            const data = d.data();
-            const targetDocRef = doc(db, `${basePath}/events`, d.id);
-            const existsSnap = await getDoc(targetDocRef);
-            if (!existsSnap.exists()) {
-              await setDoc(targetDocRef, {
-                ...data,
-                roomId,
-                updatedAt: data.updatedAt || Date.now()
-              });
-              restoredCount++;
-            }
-          }
-        }
-
-        // 4. 旧サブコレクション members の確認と復元
-        const legacyMembersSnap = await getDocs(collection(db, `${basePath}/rooms/${roomId}/members`));
-        if (!legacyMembersSnap.empty) {
-          for (const d of legacyMembersSnap.docs) {
-            const data = d.data();
-            const mUid = data.uid || d.id;
-            const targetMemberRef = doc(db, `${basePath}/members`, `${roomId}_${mUid}`);
-            const existsSnap = await getDoc(targetMemberRef);
-            if (!existsSnap.exists()) {
-              await setDoc(targetMemberRef, {
-                ...data,
-                roomId,
-                uid: mUid
-              });
-            }
-          }
-        }
-
-        if (restoredCount > 0) {
-          showToast(`以前保存していた仕事・予定（${restoredCount}件）を復元しました！`);
-        }
-      } catch (e) {
-        console.error('migrateLegacyRoomDataIfAny error:', e);
-      }
-    }
-
-    function subscribeRoomRealtime(roomId) {
-      detachRoomListeners();
-      if (!isFirebaseReady || !db || !roomId) return;
-      const basePath = getRoomBasePath(roomId);
-
-      // 1. ルームメタデータ監視
-      unsubRoomMeta = onSnapshot(doc(db, `${basePath}/rooms`, roomId), (snap) => {
+      // 1. グループメタデータ購読
+      unsubRoomMeta = onSnapshot(doc(db, `${basePath}/rooms`, targetRoomId), (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
-        if (data.name) {
+        if (data.name && data.name !== state.roomName) {
           state.roomName = data.name;
-          saveGroupToHistory(roomId, data.name);
+          saveGroupToHistory(targetRoomId, state.roomName);
+          updateRoomUI();
+          updateUrlHashState();
         }
-        state.hostUid = data.hostUid || '';
-        state.hostRecoveryCode = data.hostRecoveryCode || '';
+        state.hostUid = data.hostUid || state.hostUid;
+        state.hostRecoveryCode = data.hostRecoveryCode || state.hostRecoveryCode;
         state.hostClaim = data.hostClaim || null;
-        if (data.customCategoryLabels !== undefined) {
-          state.customCategoryLabels = data.customCategoryLabels || {};
-          saveRoomCategoryLabelsLocal(roomId, state.customCategoryLabels);
+        if (data.customCategoryLabels && Object.keys(data.customCategoryLabels).length > 0) {
+          state.customCategoryLabels = data.customCategoryLabels;
+          saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
+          renderCalendarLegend();
+          renderEventCategoryControls();
+          renderCalendar();
+          renderEventsList();
         }
-        updateRoomUI();
-        renderActiveMembersBar();
-        renderCalendarLegend();
-        renderEventCategoryControls();
-        renderCalendar();
-        renderEventsList();
-        if (!document.getElementById('members-manage-modal').classList.contains('hidden')) {
-          renderMembersManageModal();
-        }
+        renderMembersManageList();
       });
 
-      // 2. メンバー一覧監視
-      const qMembers = query(collection(db, `${basePath}/members`), where('roomId', '==', roomId));
-      unsubMembers = onSnapshot(qMembers, (snapshot) => {
+      // 2. メンバー購読
+      const qMembers = query(collection(db, `${basePath}/members`), where('roomId', '==', targetRoomId));
+      unsubMembers = onSnapshot(qMembers, (snap) => {
         const list = [];
-        snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
+        snap.forEach(d => list.push({ id: d.id, ...d.data() }));
         state.members = list;
-        updateMemberFilterOptions();
-        renderActiveMembersBar();
-        if (!document.getElementById('members-manage-modal').classList.contains('hidden')) {
-          renderMembersManageModal();
-        }
+        saveLocalRoomCache(targetRoomId);
+        updateMembersBadgeAndFilters();
+        renderActiveMembersList();
+        renderMembersManageList();
       });
 
-      // 3. タスク一覧監視
-      const qTasks = query(collection(db, `${basePath}/tasks`), where('roomId', '==', roomId));
-      unsubTasks = onSnapshot(qTasks, (snapshot) => {
+      // 3. 仕事タスク購読
+      const qTasks = query(collection(db, `${basePath}/tasks`), where('roomId', '==', targetRoomId));
+      unsubTasks = onSnapshot(qTasks, (snap) => {
         const list = [];
-        snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
+        snap.forEach(d => list.push({ id: d.id, ...d.data() }));
         list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
         state.tasks = list;
-        saveRoomOfflineDataLocal(roomId);
+        saveLocalRoomCache(targetRoomId);
         renderTasks();
         if (state.activeDetailTaskId) {
           renderTaskDetailModal(state.activeDetailTaskId);
         }
       });
 
-      // 4. カレンダー予定監視
-      const qEvents = query(collection(db, `${basePath}/events`), where('roomId', '==', roomId));
-      unsubEvents = onSnapshot(qEvents, (snapshot) => {
+      // 4. カレンダー予定購読
+      const qEvents = query(collection(db, `${basePath}/events`), where('roomId', '==', targetRoomId));
+      unsubEvents = onSnapshot(qEvents, (snap) => {
         const list = [];
-        snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
+        snap.forEach(d => list.push({ id: d.id, ...d.data() }));
         state.events = list;
-        saveRoomOfflineDataLocal(roomId);
+        saveLocalRoomCache(targetRoomId);
         renderCalendar();
         renderEventsList();
       });
     }
 
-    async function syncMyRoomMemberDoc(roomId) {
-      if (!isFirebaseReady || !db || !roomId) return;
+    async function syncMyRoomMemberDoc(targetRoomId) {
+      if (!targetRoomId) return;
       const myAccId = getEffectiveAccountId();
-      if (!myAccId) return;
+      const memberDocId = `${targetRoomId}_${myAccId}`;
+      const payload = {
+        roomId: targetRoomId,
+        accountId: myAccId,
+        uid: state.uid || myAccId,
+        name: state.profile.name || 'ゲスト',
+        role: state.profile.role || '',
+        color: state.profile.color || 'indigo',
+        updatedAt: Date.now()
+      };
 
-      const basePath = getRoomBasePath(roomId);
-      const memberDocId = `${roomId}_${myAccId}`;
-      const memberRef = doc(db, `${basePath}/members`, memberDocId);
+      const idx = state.members.findIndex(m => m.accountId === myAccId || m.id === memberDocId);
+      if (idx >= 0) {
+        state.members[idx] = { ...state.members[idx], ...payload };
+      } else {
+        state.members.push({ id: memberDocId, ...payload });
+      }
+      saveLocalRoomCache(targetRoomId);
+      updateMembersBadgeAndFilters();
 
-      try {
-        const existingSnap = await getDoc(memberRef);
-        if (existingSnap.exists()) {
-          const existing = existingSnap.data();
-          if (state.profile.name === 'ゲスト' && existing.name && existing.name !== 'ゲスト') {
-            state.profile = {
-              name: existing.name,
-              role: existing.role || '',
-              color: existing.color || 'indigo'
-            };
-            saveRoomProfileLocal();
-            updateProfileUI();
-          }
-        }
-        await setDoc(memberRef, {
-          roomId,
-          uid: myAccId,
-          name: state.profile.name || 'ゲスト',
-          role: state.profile.role || '',
-          color: state.profile.color || 'indigo',
-          lastActiveAt: Date.now()
-        }, { merge: true });
-      } catch (e) {
-        console.error('syncMyRoomMemberDoc error:', e);
+      if (isFirebaseReady && db) {
+        try {
+          await setDoc(doc(db, `${basePath}/members`, memberDocId), payload, { merge: true });
+        } catch (e) {}
       }
     }
 
+    function renderAll() {
+      updateMembersBadgeAndFilters();
+      renderCalendarLegend();
+      renderEventCategoryControls();
+      renderCalendar();
+      renderTasks();
+      renderEventsList();
+    }
+
     // ==========================================
-    // 5. メンバー表示（最上段自分→ホスト→五十音順）＆管理・緊急引き継ぎ投票
+    // 5. メンバー表示・管理・ホスト権限＆同意投票
     // ==========================================
-    function getSortedGroupMembers() {
+    function getSortedMembers() {
       const myAccId = getEffectiveAccountId();
-      const uniqueMap = new Map();
-      state.members.forEach(m => {
-        if (m && m.uid) uniqueMap.set(m.uid, m);
+      return [...state.members].sort((a, b) => {
+        const aIsMe = a.accountId === myAccId || a.uid === state.uid;
+        const bIsMe = b.accountId === myAccId || b.uid === state.uid;
+        if (aIsMe !== bIsMe) return aIsMe ? -1 : 1;
+
+        const aIsHost = a.accountId === state.hostUid || a.uid === state.hostUid;
+        const bIsHost = b.accountId === state.hostUid || b.uid === state.hostUid;
+        if (aIsHost !== bIsHost) return aIsHost ? -1 : 1;
+
+        return (a.name || '').localeCompare(b.name || '', 'ja');
       });
-      if (myAccId && !uniqueMap.has(myAccId) && state.roomId) {
-        uniqueMap.set(myAccId, {
-          uid: myAccId,
-          name: state.profile.name || 'ゲスト',
-          role: state.profile.role || '',
-          color: state.profile.color || 'indigo'
-        });
-      }
-      const all = Array.from(uniqueMap.values());
-      const me = all.find(m => m.uid === myAccId);
-      const host = all.find(m => m.uid === state.hostUid && m.uid !== myAccId);
-      const others = all
-        .filter(m => m.uid !== myAccId && m.uid !== state.hostUid)
-        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ja'));
-
-      const ordered = [];
-      if (me) ordered.push(me);
-      if (host) ordered.push(host);
-      ordered.push(...others);
-      return ordered;
     }
 
-    function renderActiveMembersBar() {
-      const badge = document.getElementById('members-count-badge');
-      const listEl = document.getElementById('active-members-list');
-      const ordered = getSortedGroupMembers();
-      if (badge) badge.textContent = ordered.length;
-      if (!listEl) return;
+    function updateMembersBadgeAndFilters() {
+      const countEl = document.getElementById('members-count-badge');
+      if (countEl) countEl.textContent = String(state.members.length);
 
-      const myAccId = getEffectiveAccountId();
-      if (ordered.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">参加メンバーがいません</p>`;
-        return;
+      const filterSelect = document.getElementById('filter-member');
+      if (filterSelect) {
+        const currentVal = filterSelect.value;
+        const names = new Set();
+        state.members.forEach(m => { if (m.name) names.add(m.name); });
+        state.tasks.forEach(t => {
+          if (t.member) names.add(t.member);
+          if (Array.isArray(t.collaborators)) t.collaborators.forEach(c => names.add(c));
+        });
+        let optionsHtml = `<option value="ALL">すべてのメンバー</option>`;
+        Array.from(names).sort((a, b) => a.localeCompare(b, 'ja')).forEach(n => {
+          optionsHtml += `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`;
+        });
+        filterSelect.innerHTML = optionsHtml;
+        if (Array.from(names).includes(currentVal)) {
+          filterSelect.value = currentVal;
+        }
       }
-
-      listEl.innerHTML = ordered.map(m => {
-        const isMe = m.uid === myAccId;
-        const isHost = m.uid === state.hostUid;
-        const name = m.name || 'ゲスト';
-        return `
-          <div class="flex items-center justify-between gap-2.5 p-2.5 rounded-xl border ${isMe ? 'bg-indigo-50/70 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30' : 'bg-slate-50/80 dark:bg-zinc-800/70 border-slate-200/70 dark:border-zinc-700/70'}">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-8 h-8 rounded-xl ${getAvatarBgClass(m.color)} text-white flex items-center justify-center text-xs font-bold shrink-0">
-                ${escapeHtml(name.charAt(0))}
-              </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(name)}</span>
-                  ${isMe ? '<span class="px-1.5 py-0.2 rounded-md bg-indigo-600 text-white text-[10px] font-bold">自分</span>' : ''}
-                  ${isHost ? '<span class="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 text-[10px] font-bold"><i class="fa-solid fa-crown text-[9px] mr-0.5 text-amber-500"></i>ホスト</span>' : ''}
-                </div>
-                <div class="text-[11px] text-slate-500 dark:text-zinc-400 truncate">${escapeHtml(m.role || '役割未設定')}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
     }
 
     window.openMembersListModal = function() {
-      renderActiveMembersBar();
+      renderActiveMembersList();
       const modal = document.getElementById('members-list-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -1825,34 +1775,43 @@
       modal.classList.remove('flex');
     };
 
-    function updateMemberFilterOptions() {
-      const select = document.getElementById('filter-member');
-      if (!select) return;
-      const currentVal = select.value;
-      const names = new Set();
-      state.members.forEach(m => { if (m.name) names.add(m.name); });
-      state.tasks.forEach(t => { if (t.member) names.add(t.member); });
+    function renderActiveMembersList() {
+      const container = document.getElementById('active-members-list');
+      if (!container) return;
+      const sorted = getSortedMembers();
+      const myAccId = getEffectiveAccountId();
 
-      select.innerHTML = `<option value="ALL">すべてのメンバー</option>` +
-        Array.from(names).sort((a, b) => a.localeCompare(b, 'ja')).map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
-      if (Array.from(names).includes(currentVal)) {
-        select.value = currentVal;
+      if (sorted.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">参加メンバーがまだいません</p>`;
+        return;
       }
-    }
 
-    function getRequiredHostClaimApprovals(totalMembers) {
-      if (totalMembers >= 5) return 3;
-      if (totalMembers === 4) return 2;
-      if (totalMembers === 3) return 1;
-      return 0;
+      container.innerHTML = sorted.map(m => {
+        const isMe = m.accountId === myAccId || m.uid === state.uid;
+        const isHost = m.accountId === state.hostUid || m.uid === state.hostUid;
+        const initial = (m.name || 'ゲ').trim().charAt(0);
+        return `
+          <div class="flex items-center justify-between gap-2.5 p-2.5 rounded-xl border ${isMe ? 'bg-indigo-50/70 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30' : 'bg-slate-50/80 dark:bg-zinc-800/70 border-slate-200/80 dark:border-zinc-700'}">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-xl ${getAvatarBgClass(m.color)} text-white flex items-center justify-center text-xs font-bold shrink-0">
+                ${escapeHtml(initial)}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(m.name || 'ゲスト')}</span>
+                  ${isMe ? '<span class="px-1.5 py-0.2 rounded-md bg-indigo-600 text-white text-[9px] font-bold">自分</span>' : ''}
+                  ${isHost ? '<span class="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[9px] font-bold"><i class="fa-solid fa-crown mr-0.5 text-amber-500"></i>ホスト</span>' : ''}
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-zinc-400 truncate">${escapeHtml(m.role || '役割未設定')}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     window.openMembersManageModal = function() {
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        return;
-      }
-      renderMembersManageModal();
+      renderMembersManageList();
       const modal = document.getElementById('members-manage-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -1864,99 +1823,93 @@
       modal.classList.remove('flex');
     };
 
-    function renderMembersManageModal() {
-      const myAccId = getEffectiveAccountId();
-      const isMeHost = myAccId && myAccId === state.hostUid;
-      const ordered = getSortedGroupMembers();
-      const totalMembers = ordered.length;
-      const requiredApprovals = getRequiredHostClaimApprovals(totalMembers);
+    function getRequiredClaimApprovalsCount() {
+      const otherMembers = state.members.filter(m => m.accountId !== state.hostUid && m.uid !== state.hostUid);
+      const nonHostCount = Math.max(1, otherMembers.length);
+      if (nonHostCount <= 2) return 1;
+      return Math.ceil(nonHostCount * 0.5);
+    }
 
-      // ホスト専用回復コード表示
-      const codePanel = document.getElementById('host-recovery-code-panel');
-      const codeText = document.getElementById('display-host-recovery-code');
-      if (codePanel) {
-        codePanel.classList.toggle('hidden', !isMeHost);
-        if (isMeHost && codeText) {
-          codeText.textContent = state.hostRecoveryCode || '未発行';
-        }
+    function renderMembersManageList() {
+      const listEl = document.getElementById('members-manage-list');
+      if (!listEl) return;
+
+      const myAccId = getEffectiveAccountId();
+      const amIHost = (state.hostUid && state.hostUid === myAccId);
+
+      // ホスト専用パネル
+      const hostCodePanel = document.getElementById('host-recovery-code-panel');
+      const codeDisplay = document.getElementById('display-host-recovery-code');
+      if (hostCodePanel && codeDisplay) {
+        hostCodePanel.classList.toggle('hidden', !amIHost);
+        if (amIHost) codeDisplay.textContent = state.hostRecoveryCode || '------';
       }
 
-      // 非ホスト専用緊急パネル
-      const emergencyPanel = document.getElementById('host-emergency-takeover-panel');
-      const ruleHint = document.getElementById('host-takeover-rule-hint');
-      if (emergencyPanel) {
-        emergencyPanel.classList.toggle('hidden', isMeHost);
-        if (!isMeHost && ruleHint) {
-          if (requiredApprovals > 0) {
-            ruleHint.textContent = `現在グループ人数は${totalMembers}人のため、他のメンバー${requiredApprovals}人以上の同意があると新しいホストに昇格します。`;
-          } else {
-            ruleHint.textContent = `現在グループ人数は${totalMembers}人のため、他のメンバーの同意なしで即座にホストを引き継げます。`;
-          }
-        }
+      // 非ホスト緊急引き継ぎパネル
+      const takeoverPanel = document.getElementById('host-emergency-takeover-panel');
+      if (takeoverPanel) {
+        takeoverPanel.classList.toggle('hidden', amIHost);
       }
 
       // 同意投票パネル
       const votingPanel = document.getElementById('host-claim-voting-panel');
-      const claim = state.hostClaim;
       if (votingPanel) {
-        if (claim && claim.candidateUid) {
+        if (state.hostClaim && state.hostClaim.candidateAccountId) {
           votingPanel.classList.remove('hidden');
+          const claim = state.hostClaim;
+          const required = claim.requiredCount || getRequiredClaimApprovalsCount();
           const approvers = Array.isArray(claim.approvers) ? claim.approvers : [];
-          const reqCount = getRequiredHostClaimApprovals(totalMembers);
           document.getElementById('host-claim-candidate-title').textContent = `申請者: ${claim.candidateName || 'メンバー'}`;
-          document.getElementById('host-claim-rule-desc').textContent = `グループ人数${totalMembers}人（必要同意数: ${reqCount}人）`;
-          document.getElementById('host-claim-progress-badge').textContent = `${approvers.length} / ${reqCount}人`;
+          document.getElementById('host-claim-rule-desc').textContent = `必要同意数: ${approvers.length} / ${required}人`;
+          document.getElementById('host-claim-progress-badge').textContent = `${approvers.length} / ${required}`;
 
-          const approverNames = approvers.map(uid => {
-            const found = ordered.find(m => m.uid === uid);
-            return found ? found.name : uid;
+          const approverNames = approvers.map(accId => {
+            const found = state.members.find(m => m.accountId === accId);
+            return found ? found.name : accId;
           });
           document.getElementById('host-claim-approvers-list').textContent =
-            `同意済み: ${approverNames.length > 0 ? approverNames.join('、') : 'なし'}`;
+            approverNames.length > 0 ? `同意済み: ${approverNames.join('、')}` : '同意済み: なし';
 
           const actionsEl = document.getElementById('host-claim-actions');
           const alreadyApproved = approvers.includes(myAccId);
-          const isCandidate = claim.candidateUid === myAccId;
-          let btns = '';
-          if (!isCandidate && !alreadyApproved) {
-            btns += `<button type="button" onclick="approveHostClaim()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">この人の引き継ぎに同意する</button>`;
+          const isCandidate = claim.candidateAccountId === myAccId;
+          let btnsHtml = '';
+          if (!alreadyApproved && !isCandidate) {
+            btnsHtml += `<button type="button" onclick="approveHostClaim()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">引き継ぎに同意する</button>`;
           }
-          if (isCandidate || isMeHost) {
-            btns += `<button type="button" onclick="cancelHostClaim()" class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-700 hover:bg-slate-300 text-slate-700 dark:text-zinc-200 text-xs font-semibold transition">${isCandidate ? '申請を取り消す' : '申請を却下する'}</button>`;
+          if (isCandidate || amIHost) {
+            btnsHtml += `<button type="button" onclick="cancelHostClaim()" class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold transition">申請を取り消す</button>`;
           }
-          actionsEl.innerHTML = btns;
+          actionsEl.innerHTML = btnsHtml;
         } else {
           votingPanel.classList.add('hidden');
         }
       }
 
-      // メンバー管理リスト
-      const listEl = document.getElementById('members-manage-list');
-      if (!listEl) return;
-      listEl.innerHTML = ordered.map(m => {
-        const isHost = m.uid === state.hostUid;
-        const isMe = m.uid === myAccId;
-        const name = m.name || 'ゲスト';
+      const sorted = getSortedMembers();
+      listEl.innerHTML = sorted.map(m => {
+        const isMe = m.accountId === myAccId || m.uid === state.uid;
+        const isHost = m.accountId === state.hostUid || m.uid === state.hostUid;
+        const initial = (m.name || 'ゲ').trim().charAt(0);
         return `
-          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-200/80 dark:border-zinc-700">
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50/80 dark:bg-zinc-800/70 border border-slate-200/80 dark:border-zinc-700">
             <div class="flex items-center gap-2 min-w-0">
               <div class="w-7 h-7 rounded-lg ${getAvatarBgClass(m.color)} text-white flex items-center justify-center text-xs font-bold shrink-0">
-                ${escapeHtml(name.charAt(0))}
+                ${escapeHtml(initial)}
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(name)}</span>
-                  ${isMe ? '<span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">(自分)</span>' : ''}
-                  ${isHost ? '<span class="px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 text-[10px] font-bold">👑 ホスト</span>' : ''}
+                  <span class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(m.name || 'ゲスト')}</span>
+                  ${isMe ? '<span class="px-1.5 py-0.2 rounded-md bg-indigo-600 text-white text-[9px] font-bold">自分</span>' : ''}
+                  ${isHost ? '<span class="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[9px] font-bold">ホスト</span>' : ''}
                 </div>
-                <div class="text-[10px] text-slate-400 truncate">${escapeHtml(m.role || '役割未設定')}</div>
+                <p class="text-[10px] text-slate-500 dark:text-zinc-400 truncate">${escapeHtml(m.role || '役割未設定')}</p>
               </div>
             </div>
-            ${(isMeHost && !isHost) ? `
-              <div class="flex items-center gap-1 shrink-0">
-                <button type="button" onclick="transferHostRole('${escapeHtml(m.uid)}', '${escapeHtml(name)}')" class="px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-500/20 hover:bg-amber-200 text-amber-800 dark:text-amber-300 text-[10px] font-bold transition">ホスト譲渡</button>
-                <button type="button" onclick="removeMemberByHost('${escapeHtml(m.uid)}', '${escapeHtml(name)}')" class="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/15 hover:bg-rose-100 text-rose-600 dark:text-rose-400 text-[10px] font-bold transition">削除</button>
-              </div>
+            ${(amIHost && !isMe && m.accountId) ? `
+              <button type="button" onclick="transferHostToMember('${escapeHtml(m.accountId)}', '${escapeHtml(m.name || '')}')" class="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-500/20 hover:bg-amber-200 dark:hover:bg-amber-500/30 text-amber-800 dark:text-amber-200 text-[11px] font-bold transition shrink-0">
+                ホスト譲渡
+              </button>
             ` : ''}
           </div>
         `;
@@ -1969,251 +1922,159 @@
       showToast('ホスト緊急回復コードをコピーしました');
     };
 
-    window.transferHostRole = function(targetUid, targetName) {
-      openConfirmModal(`「${targetName}」にホスト権限を譲渡してもよろしいですか？`, async () => {
-        try {
-          await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId), {
-            hostUid: targetUid,
-            hostClaim: null,
-            updatedAt: Date.now()
-          });
-          showToast(`${targetName} にホスト権限を譲渡しました`);
-        } catch (e) {
-          showToast('ホスト譲渡に失敗しました', 'error');
-        }
-      }, { title: 'ホスト権限の譲渡', confirmText: '譲渡する', variant: 'host' });
-    };
-
-    window.removeMemberByHost = function(targetUid, targetName) {
-      openConfirmModal(`「${targetName}」をグループから削除しますか？`, async () => {
-        try {
-          await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/members`, `${state.roomId}_${targetUid}`));
-          showToast(`${targetName} を削除しました`);
-        } catch (e) {
-          showToast('メンバーの削除に失敗しました', 'error');
+    window.transferHostToMember = function(targetAccId, targetName) {
+      openConfirmDialog({
+        title: 'ホスト権限の譲渡',
+        message: `「${targetName}」さんにグループのホスト権限を譲渡しますか？`,
+        confirmLabel: '譲渡する',
+        onConfirm: async () => {
+          state.hostUid = targetAccId;
+          if (isFirebaseReady && db && state.roomId) {
+            await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: targetAccId, hostClaim: null });
+          }
+          renderMembersManageList();
+          renderActiveMembersList();
+          showToast(`${targetName}さんにホスト権限を譲渡しました`);
         }
       });
     };
 
     window.claimHostEmergency = async function() {
-      if (!isFirebaseReady || !db || !state.roomId) return;
+      if (!state.roomId) return;
       const myAccId = getEffectiveAccountId();
-      const ordered = getSortedGroupMembers();
-      const reqCount = getRequiredHostClaimApprovals(ordered.length);
+      const required = getRequiredClaimApprovalsCount();
+      const otherNonHostCount = state.members.filter(m => m.accountId !== state.hostUid && m.accountId !== myAccId).length;
 
-      if (reqCount === 0) {
-        openConfirmModal('グループ人数が2人以下のため、すぐに新しいホストを引き継げます。実行しますか？', async () => {
-          try {
-            await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId), {
-              hostUid: myAccId,
-              hostClaim: null,
-              updatedAt: Date.now()
-            });
-            showToast('あなたが新しいホストになりました！');
-          } catch (e) {
-            showToast('ホスト引き継ぎに失敗しました', 'error');
-          }
-        }, { title: 'ホスト引き継ぎの確認', confirmText: '引き継ぐ', variant: 'host' });
+      // 他に承認できるメンバーがいない場合は即座に引き継ぎ
+      if (otherNonHostCount === 0) {
+        state.hostUid = myAccId;
+        state.hostClaim = null;
+        if (isFirebaseReady && db) {
+          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: myAccId, hostClaim: null });
+        }
+        renderMembersManageList();
+        showToast('新しいホスト権限を引き継ぎました');
         return;
       }
 
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId), {
-          hostClaim: {
-            candidateUid: myAccId,
-            candidateName: state.profile.name || 'ゲスト',
-            approvers: [],
-            createdAt: Date.now()
-          },
-          updatedAt: Date.now()
-        });
-        showToast(`ホスト引き継ぎ申請を開始しました（他のメンバー${reqCount}人の同意で交代します）`, 'info');
-      } catch (e) {
-        showToast('申請の開始に失敗しました', 'error');
+      const claimObj = {
+        candidateAccountId: myAccId,
+        candidateName: state.profile.name || 'メンバー',
+        approvers: [myAccId],
+        requiredCount: required,
+        createdAt: Date.now()
+      };
+      state.hostClaim = claimObj;
+      if (isFirebaseReady && db) {
+        await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostClaim: claimObj });
       }
+      renderMembersManageList();
+      showToast('ホスト引き継ぎの同意申請を開始しました', 'info');
     };
 
     window.approveHostClaim = async function() {
-      if (!isFirebaseReady || !db || !state.roomId || !state.hostClaim) return;
+      if (!state.hostClaim || !state.roomId) return;
       const myAccId = getEffectiveAccountId();
-      const claim = state.hostClaim;
-      if (claim.candidateUid === myAccId) return;
+      const approvers = Array.from(new Set([...(state.hostClaim.approvers || []), myAccId]));
+      const required = state.hostClaim.requiredCount || 1;
 
-      const approvers = Array.isArray(claim.approvers) ? [...claim.approvers] : [];
-      if (!approvers.includes(myAccId)) approvers.push(myAccId);
-
-      const ordered = getSortedGroupMembers();
-      const reqCount = getRequiredHostClaimApprovals(ordered.length);
-      const roomRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-
-      try {
-        if (approvers.length >= reqCount) {
-          await updateDoc(roomRef, {
-            hostUid: claim.candidateUid,
-            hostClaim: null,
-            updatedAt: Date.now()
-          });
-          showToast(`必要数の同意が集まり、${claim.candidateName} が新しいホストになりました！`);
-        } else {
-          await updateDoc(roomRef, {
-            hostClaim: { ...claim, approvers },
-            updatedAt: Date.now()
-          });
-          showToast(`同意しました（現在 ${approvers.length} / ${reqCount}人）`);
+      if (approvers.length >= required) {
+        const newHostId = state.hostClaim.candidateAccountId;
+        const newHostName = state.hostClaim.candidateName;
+        state.hostUid = newHostId;
+        state.hostClaim = null;
+        if (isFirebaseReady && db) {
+          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: newHostId, hostClaim: null });
         }
-      } catch (e) {
-        showToast('同意処理に失敗しました', 'error');
+        showToast(`${newHostName}さんが新しいホストに承認されました`);
+      } else {
+        state.hostClaim.approvers = approvers;
+        if (isFirebaseReady && db) {
+          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostClaim: state.hostClaim });
+        }
+        showToast('引き継ぎ申請に同意しました');
       }
+      renderMembersManageList();
     };
 
     window.cancelHostClaim = async function() {
-      if (!isFirebaseReady || !db || !state.roomId) return;
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId), {
-          hostClaim: null,
-          updatedAt: Date.now()
-        });
-        showToast('ホスト引き継ぎ申請を取り消しました', 'info');
-      } catch (e) {}
+      state.hostClaim = null;
+      if (isFirebaseReady && db && state.roomId) {
+        await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostClaim: null });
+      }
+      renderMembersManageList();
+      showToast('引き継ぎ申請を取り消しました', 'info');
     };
 
     window.recoverHostWithCode = async function() {
       const input = document.getElementById('input-host-recovery-code');
       const code = (input?.value || '').trim().toUpperCase();
       if (!code) {
-        showToast('6桁の回復コードを入力してください', 'info');
+        showToast('6桁の回復コードを入力してください', 'error');
         return;
       }
-      if (!state.hostRecoveryCode || code !== state.hostRecoveryCode.toUpperCase()) {
-        showToast('回復コードが一致しません', 'error');
-        return;
-      }
-      try {
+      if (state.hostRecoveryCode && code === state.hostRecoveryCode.toUpperCase()) {
         const myAccId = getEffectiveAccountId();
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId), {
-          hostUid: myAccId,
-          hostClaim: null,
-          updatedAt: Date.now()
-        });
-        input.value = '';
-        showToast('回復コードが確認され、ホスト権限を復元しました！');
-      } catch (e) {
-        showToast('復元に失敗しました', 'error');
+        state.hostUid = myAccId;
+        state.hostClaim = null;
+        if (isFirebaseReady && db && state.roomId) {
+          await updateDoc(doc(db, `${basePath}/rooms`, state.roomId), { hostUid: myAccId, hostClaim: null });
+        }
+        if (input) input.value = '';
+        renderMembersManageList();
+        showToast('ホスト権限を復元しました！');
+      } else {
+        showToast('回復コードが一致しません', 'error');
       }
     };
 
     window.confirmLeaveCurrentGroup = function() {
       if (!state.roomId) return;
-      const myAccId = getEffectiveAccountId();
-      const ordered = getSortedGroupMembers();
-      const isMeHost = myAccId && myAccId === state.hostUid;
-      const otherMembers = ordered.filter(m => m.uid !== myAccId);
-
-      if (isMeHost && otherMembers.length > 0) {
-        showToast('他のメンバーがいるため、先に「メンバー管理」からホスト権限を譲渡してください', 'error');
-        openMembersManageModal();
-        return;
-      }
-
-      openConfirmModal(`グループ「${state.roomName || state.roomId}」から退出しますか？`, async () => {
-        const leavingRoomId = state.roomId;
-        const basePath = getRoomBasePath(leavingRoomId);
-        try {
+      const leavingId = state.roomId;
+      const leavingName = state.roomName || leavingId;
+      openConfirmDialog({
+        title: 'グループを退出',
+        message: `グループ「${leavingName}」から退出しますか？再度グループIDを入力すればいつでも戻ることができます。`,
+        confirmLabel: '退出する',
+        onConfirm: async () => {
+          const myAccId = getEffectiveAccountId();
           if (isFirebaseReady && db) {
-            await deleteDoc(doc(db, `${basePath}/members`, `${leavingRoomId}_${myAccId}`));
-            if (isMeHost && otherMembers.length === 0) {
-              await deleteDoc(doc(db, `${basePath}/rooms`, leavingRoomId));
-            }
+            try {
+              await deleteDoc(doc(db, `${basePath}/members`, `${leavingId}_${myAccId}`));
+            } catch (e) {}
           }
-        } catch (e) {}
-
-        detachRoomListeners();
-        removeGroupFromHistory(leavingRoomId);
-        state.roomId = '';
-        state.roomName = '';
-        state.hostUid = '';
-        state.members = [];
-        state.tasks = [];
-        state.events = [];
-        updateRoomUI();
-        renderActiveMembersBar();
-        renderTasks();
-        renderCalendar();
-        renderEventsList();
-        showToast('グループから退出しました', 'info');
-
-        if (state.recentGroups.length > 0) {
-          openRoomModal();
-        } else {
+          state.recentGroups = state.recentGroups.filter(g => g.id !== leavingId);
+          localStorage.setItem('teamsync_recent_groups', JSON.stringify(state.recentGroups));
+          state.roomId = '';
+          state.roomName = '';
+          state.tasks = [];
+          state.events = [];
+          state.members = [];
+          try { window.history.replaceState(null, '', window.location.href.split('#')[0]); } catch (e) {}
+          updateRoomUI();
+          renderAll();
+          showToast(`「${leavingName}」から退出しました`, 'info');
           openCreateGroupModal(true);
-        }
-      }, { title: 'グループ退出の確認', confirmText: '退出する' });
-    };
-
-    // ==========================================
-    // 6. タブ切替・仕事ボード描画・検索・シンプルモード
-    // ==========================================
-    window.switchMainTab = function(tab, animate = true) {
-      state.mainTab = tab;
-      const isDesktop = window.innerWidth >= 1024;
-      const grid = document.getElementById('workspace-grid');
-      const tabBoth = document.getElementById('tab-both');
-      const tabTasks = document.getElementById('tab-tasks');
-      const tabCal = document.getElementById('tab-calendar');
-      const secTasks = document.getElementById('section-tasks');
-      const secCal = document.getElementById('section-calendar');
-
-      const activeBtnClass = 'bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-xs';
-      const inactiveBtnClass = 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white';
-
-      if (isDesktop) {
-        if (grid) {
-          grid.classList.remove('swipe-animating');
-          grid.style.transform = '';
-        }
-        if (tab === 'both') {
-          secTasks?.classList.remove('hidden', 'lg:col-span-12');
-          secTasks?.classList.add('lg:col-span-7');
-          secCal?.classList.remove('hidden', 'lg:col-span-12');
-          secCal?.classList.add('lg:col-span-5');
-        } else if (tab === 'tasks') {
-          secTasks?.classList.remove('hidden', 'lg:col-span-7');
-          secTasks?.classList.add('lg:col-span-12');
-          secCal?.classList.add('hidden');
-        } else {
-          secCal?.classList.remove('hidden', 'lg:col-span-5');
-          secCal?.classList.add('lg:col-span-12');
-          secTasks?.classList.add('hidden');
-        }
-      } else {
-        secTasks?.classList.remove('hidden');
-        secCal?.classList.remove('hidden');
-        if (grid) {
-          grid.classList.toggle('swipe-animating', animate);
-          const offset = tab === 'calendar' ? '-50%' : '0%';
-          grid.style.transform = `translate3d(${offset}, 0, 0)`;
-        }
-      }
-
-      [
-        { el: tabBoth, key: 'both', base: 'hidden lg:flex flex-1 items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ' },
-        { el: tabTasks, key: 'tasks', base: 'flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ' },
-        { el: tabCal, key: 'calendar', base: 'flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ' }
-      ].forEach(item => {
-        if (item.el) {
-          item.el.className = item.base + (state.mainTab === item.key ? activeBtnClass : inactiveBtnClass);
         }
       });
     };
 
+    // ==========================================
+    // 6. 仕事（タスク）管理・検索・表示モード切替
+    // ==========================================
     window.setTaskViewMode = function(mode) {
       state.taskViewMode = mode;
       const btnCards = document.getElementById('btn-view-cards');
       const btnKanban = document.getElementById('btn-view-kanban');
-      const active = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition';
-      const inactive = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition';
-      if (btnCards) btnCards.className = mode === 'cards' ? active : inactive;
-      if (btnKanban) btnKanban.className = mode === 'kanban' ? active : inactive;
+      if (btnCards && btnKanban) {
+        if (mode === 'cards') {
+          btnCards.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition';
+          btnKanban.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition';
+        } else {
+          btnKanban.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition';
+          btnCards.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white transition';
+        }
+      }
       renderTasks();
     };
 
@@ -2226,89 +2087,92 @@
     function updateTaskDensityButtonUI() {
       const detailIcon = document.getElementById('btn-density-detail');
       const simpleIcon = document.getElementById('btn-density-simple');
-      const isSimple = state.taskDisplayDensity === 'simple';
+      if (!detailIcon || !simpleIcon) return;
       const activeClass = 'w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition pointer-events-none';
       const inactiveClass = 'w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 dark:text-zinc-500 transition pointer-events-none';
-      if (detailIcon) detailIcon.className = !isSimple ? activeClass : inactiveClass;
-      if (simpleIcon) simpleIcon.className = isSimple ? activeClass : inactiveClass;
-    }
-
-    function getStatusBadgeClass(status) {
-      switch (status) {
-        case '完了': return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30';
-        case 'レビュー待ち': return 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30';
-        case '一時停止': return 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700';
-        default: return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30';
+      if (state.taskDisplayDensity === 'detail') {
+        detailIcon.className = activeClass;
+        simpleIcon.className = inactiveClass;
+      } else {
+        detailIcon.className = inactiveClass;
+        simpleIcon.className = activeClass;
       }
     }
 
-    function getPriorityLabel(p) {
-      if (p === '高') return '🔥 高';
-      if (p === '低') return '🌱 低';
-      return '⚡ 中';
-    }
-
     window.handleTaskSearchInput = function() {
-      const searchInput = document.getElementById('filter-search');
+      const input = document.getElementById('filter-search');
       const clearBtn = document.getElementById('btn-clear-task-search');
-      const val = searchInput ? searchInput.value : '';
-      if (clearBtn) {
-        clearBtn.classList.toggle('hidden', val.length === 0);
-        clearBtn.classList.toggle('flex', val.length > 0);
+      if (clearBtn && input) {
+        if (input.value.length > 0) {
+          clearBtn.classList.remove('hidden');
+          clearBtn.classList.add('flex');
+        } else {
+          clearBtn.classList.add('hidden');
+          clearBtn.classList.remove('flex');
+        }
       }
       renderTasks();
     };
 
     window.clearTaskSearch = function() {
-      const searchInput = document.getElementById('filter-search');
-      const clearBtn = document.getElementById('btn-clear-task-search');
-      if (searchInput) searchInput.value = '';
-      if (clearBtn) {
-        clearBtn.classList.add('hidden');
-        clearBtn.classList.remove('flex');
-      }
-      renderTasks();
+      const input = document.getElementById('filter-search');
+      if (input) input.value = '';
+      handleTaskSearchInput();
     };
+
+    function getStatusBadgeStyle(status) {
+      switch (status) {
+        case '進行中': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300';
+        case 'レビュー待ち': return 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300';
+        case '一時停止': return 'bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-300';
+        case '完了': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300';
+        default: return 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300';
+      }
+    }
 
     window.renderTasks = function() {
       const container = document.getElementById('tasks-container');
-      const badgeCount = document.getElementById('badge-task-count');
+      const badgeEl = document.getElementById('badge-task-count');
       if (!container) return;
 
       const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
       const memberFilter = document.getElementById('filter-member')?.value || 'ALL';
-      const rawSearch = document.getElementById('filter-search')?.value || '';
-      const searchKeyword = rawSearch.trim().toLowerCase();
+      const rawSearch = (document.getElementById('filter-search')?.value || '').trim();
+      const keyword = rawSearch.toLowerCase();
 
       const activeCount = state.tasks.filter(t => t.status !== '完了').length;
-      if (badgeCount) badgeCount.textContent = activeCount;
+      if (badgeEl) badgeEl.textContent = String(activeCount);
 
       const filtered = state.tasks.filter(t => {
-        if (statusFilter !== 'ALL' && (t.status || '進行中') !== statusFilter) return false;
-        if (memberFilter !== 'ALL' && t.member !== memberFilter) return false;
-        if (searchKeyword.length > 0) {
-          const inTitle = (t.title || '').toLowerCase().includes(searchKeyword);
-          const comments = Array.isArray(t.comments) ? t.comments : [];
-          const inComments = comments.some(c =>
-            (c.text || '').toLowerCase().includes(searchKeyword) ||
-            (c.author || '').toLowerCase().includes(searchKeyword)
+        if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+        if (memberFilter !== 'ALL') {
+          const isMain = t.member === memberFilter;
+          const isCollab = Array.isArray(t.collaborators) && t.collaborators.includes(memberFilter);
+          if (!isMain && !isCollab) return false;
+        }
+        if (keyword) {
+          const inTitle = (t.title || '').toLowerCase().includes(keyword);
+          const inTag = (t.tag || '').toLowerCase().includes(keyword);
+          const inDesc = (t.desc || '').toLowerCase().includes(keyword);
+          const inComments = Array.isArray(t.comments) && t.comments.some(c =>
+            (c.text || '').toLowerCase().includes(keyword) || (c.author || '').toLowerCase().includes(keyword)
           );
-          if (!inTitle && !inComments) return false;
+          if (!inTitle && !inTag && !inDesc && !inComments) return false;
         }
         return true;
       });
 
       if (filtered.length === 0) {
-        if (rawSearch.trim().length === 1) {
-          container.innerHTML = `<div class="text-center py-12 text-xs font-semibold text-slate-400 dark:text-zinc-500">仕事が存在しません</div>`;
+        if (rawSearch.length === 1) {
+          container.innerHTML = `<div class="py-12 text-center text-sm font-medium text-slate-400 dark:text-zinc-500">仕事が存在しません</div>`;
         } else {
           container.innerHTML = `
-            <div class="text-center py-12 px-4">
-              <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
-                <i class="fa-solid fa-clipboard-list text-lg"></i>
-              </div>
-              <p class="text-xs font-bold text-slate-600 dark:text-zinc-300">表示できる仕事がありません</p>
-              <p class="text-[11px] text-slate-400 mt-1">右上の「+ 仕事報告」ボタンから進行中の作業を共有しましょう</p>
+            <div class="py-12 text-center flex flex-col items-center gap-2 text-slate-400 dark:text-zinc-500">
+              <i class="fa-solid fa-clipboard-list text-2xl opacity-60"></i>
+              <p class="text-xs font-semibold">表示する仕事がありません</p>
+              <button onclick="openTaskModal()" class="mt-1 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
+                + 新しい仕事を報告する
+              </button>
             </div>
           `;
         }
@@ -2320,83 +2184,91 @@
       if (state.taskViewMode === 'kanban') {
         const statuses = ['進行中', 'レビュー待ち', '一時停止', '完了'];
         container.innerHTML = `
-          <div class="flex flex-col gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             ${statuses.map(st => {
               const items = filtered.filter(t => (t.status || '進行中') === st);
-              if (items.length === 0) return '';
               return `
-                <div class="bg-white/70 dark:bg-zinc-900/70 rounded-xl p-3 border border-slate-200/80 dark:border-zinc-800">
-                  <div class="flex items-center justify-between mb-2.5">
-                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeClass(st)}">${st}</span>
+                <div class="bg-white dark:bg-zinc-900/90 rounded-xl border border-slate-200/80 dark:border-zinc-800 p-3 flex flex-col gap-2">
+                  <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-zinc-800">
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${getStatusBadgeStyle(st)}">${escapeHtml(st)}</span>
                     <span class="text-[11px] font-bold text-slate-400">${items.length}件</span>
                   </div>
-                  ${isSimple
-                    ? `<div class="grid grid-cols-2 gap-2">${items.map(t => renderSimpleTaskCard(t)).join('')}</div>`
-                    : `<div class="flex flex-col gap-2.5">${items.map(t => renderSingleTaskCard(t)).join('')}</div>`
-                  }
+                  <div class="${isSimple ? 'grid grid-cols-2 gap-1.5' : 'flex flex-col gap-2'}">
+                    ${items.length === 0
+                      ? `<p class="text-[11px] text-slate-400 text-center py-3 col-span-2">なし</p>`
+                      : items.map(t => renderSingleTaskCard(t, isSimple)).join('')
+                    }
+                  </div>
                 </div>
               `;
             }).join('')}
           </div>
         `;
       } else {
-        if (isSimple) {
-          container.innerHTML = `<div class="grid grid-cols-2 gap-2.5">${filtered.map(t => renderSimpleTaskCard(t)).join('')}</div>`;
-        } else {
-          container.innerHTML = `<div class="flex flex-col gap-3">${filtered.map(t => renderSingleTaskCard(t)).join('')}</div>`;
-        }
+        container.innerHTML = `
+          <div class="${isSimple ? 'grid grid-cols-2 gap-2.5' : 'flex flex-col gap-3'}">
+            ${filtered.map(t => renderSingleTaskCard(t, isSimple)).join('')}
+          </div>
+        `;
       }
     };
 
-    function renderSimpleTaskCard(t) {
+    function renderSingleTaskCard(t, isSimple) {
       const commentsCount = Array.isArray(t.comments) ? t.comments.length : 0;
-      return `
-        <div onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="cursor-pointer bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-2xs transition flex flex-col justify-between gap-2 min-h-[78px]">
-          <div class="flex items-center justify-between gap-1">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border truncate ${getStatusBadgeClass(t.status)}">${escapeHtml(t.status || '進行中')}</span>
-            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 dark:text-zinc-500 shrink-0">
-              <i class="fa-regular fa-comment-dots"></i>
-              ${commentsCount > 0 ? `<span>${commentsCount}</span>` : ''}
-            </span>
+      const statusClass = getStatusBadgeStyle(t.status || '進行中');
+
+      if (isSimple) {
+        return `
+          <div onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-2.5 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition cursor-pointer shadow-2xs flex flex-col justify-between gap-2 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold ${statusClass} truncate">${escapeHtml(t.status || '進行中')}</span>
+              <span class="inline-flex items-center gap-0.5 text-[11px] text-slate-400 dark:text-zinc-400 shrink-0">
+                <i class="fa-regular fa-comment-dots"></i>
+                ${commentsCount > 0 ? `<span class="font-bold text-[10px]">${commentsCount}</span>` : ''}
+              </span>
+            </div>
+            <h3 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug break-words">${escapeHtml(t.title)}</h3>
           </div>
-          <h3 class="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">${escapeHtml(t.title)}</h3>
-        </div>
-      `;
-    }
+        `;
+      }
 
-    function renderSingleTaskCard(t) {
-      const progress = Number(t.progress ?? 0);
+      const progress = Number(t.progress || 0);
       const collabs = Array.isArray(t.collaborators) ? t.collaborators : [];
-      const acks = Array.isArray(t.acks) ? t.acks : [];
-      const myId = getEffectiveAccountId();
-      const hasAcked = myId && acks.includes(myId);
-      const commentsCount = Array.isArray(t.comments) ? t.comments.length : 0;
+      const acks = Array.isArray(t.acknowledgedBy) ? t.acknowledgedBy : [];
+      const myAccId = getEffectiveAccountId();
+      const hasAcked = acks.includes(myAccId);
 
       return `
-        <div class="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/80 dark:border-zinc-800 p-3.5 sm:p-4 shadow-2xs hover:border-indigo-300 dark:hover:border-indigo-500/40 transition">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeClass(t.status)}">${escapeHtml(t.status || '進行中')}</span>
-              <span class="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">${getPriorityLabel(t.priority)}</span>
+        <div onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200/90 dark:border-zinc-800 p-3.5 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition cursor-pointer shadow-2xs flex flex-col gap-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${statusClass}">${escapeHtml(t.status || '進行中')}</span>
+              ${t.priority === '高' ? '<span class="px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-300 text-[10px] font-bold">🔥 最優先</span>' : ''}
               ${t.tag ? `<span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 text-[10px] font-semibold">#${escapeHtml(t.tag)}</span>` : ''}
             </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <button type="button" onclick="openTaskModal('${escapeHtml(t.id)}')" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-zinc-800 transition" title="編集">
+            <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+              <button type="button" onclick="openTaskModal('${escapeHtml(t.id)}')" class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center transition" title="編集">
                 <i class="fa-solid fa-pen text-xs"></i>
               </button>
-              <button type="button" onclick="deleteTask('${escapeHtml(t.id)}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-zinc-800 transition" title="削除">
+              <button type="button" onclick="confirmDeleteTask('${escapeHtml(t.id)}', '${escapeHtml(t.title)}')" class="w-7 h-7 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-500/15 text-slate-400 hover:text-rose-600 flex items-center justify-center transition" title="削除">
                 <i class="fa-regular fa-trash-can text-xs"></i>
               </button>
             </div>
           </div>
 
-          <h3 onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="cursor-pointer text-sm sm:text-base font-bold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition mb-1.5 leading-snug">
-            ${escapeHtml(t.title)}
-          </h3>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">${escapeHtml(t.title)}</h3>
+            ${t.desc ? `<p class="text-xs text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2">${escapeHtml(t.desc)}</p>` : ''}
+          </div>
 
-          ${t.desc ? `<p onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="cursor-pointer text-xs text-slate-500 dark:text-zinc-400 line-clamp-2 mb-3">${escapeHtml(t.desc)}</p>` : ''}
+          <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600 dark:text-zinc-300">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-zinc-800 font-semibold">
+              <i class="fa-solid fa-user text-[10px] text-indigo-500"></i> ${escapeHtml(t.member || '未設定')}
+            </span>
+            ${collabs.map(c => `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50/80 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-medium">+ ${escapeHtml(c)}</span>`).join('')}
+          </div>
 
-          <div class="mb-3">
+          <div onclick="event.stopPropagation()">
             <div class="flex items-center justify-between text-[11px] font-bold mb-1">
               <span class="text-slate-500 dark:text-zinc-400">進捗率</span>
               <span class="text-indigo-600 dark:text-indigo-400">${progress}%</span>
@@ -2404,112 +2276,50 @@
             <input type="range" min="0" max="100" step="5" value="${progress}" onchange="quickUpdateTaskProgress('${escapeHtml(t.id)}', this.value)" class="w-full h-1.5 cursor-pointer">
           </div>
 
-          <div class="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 text-xs">
-            <div class="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span class="font-bold text-slate-700 dark:text-zinc-200"><i class="fa-regular fa-user mr-1 text-indigo-500"></i>${escapeHtml(t.member || '未設定')}</span>
-              ${collabs.length > 0 ? `<span class="text-[11px] text-slate-400 truncate">+ ${escapeHtml(collabs.join(', '))}</span>` : ''}
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button type="button" onclick="toggleTaskAck('${escapeHtml(t.id)}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${hasAcked ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' : 'bg-slate-50 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-100'}">
-                <i class="fa-solid fa-thumbs-up mr-1"></i>確認済 ${acks.length}
-              </button>
-              <button type="button" onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 transition">
-                <i class="fa-regular fa-comment-dots mr-1"></i>${commentsCount}
-              </button>
-            </div>
+          <div class="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-zinc-800 text-[11px]" onclick="event.stopPropagation()">
+            <button type="button" onclick="toggleTaskAcknowledge('${escapeHtml(t.id)}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition ${hasAcked ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'}">
+              <i class="fa-solid fa-check"></i>
+              <span>確認済 (${acks.length})</span>
+            </button>
+            <button type="button" onclick="openTaskDetailModal('${escapeHtml(t.id)}')" class="inline-flex items-center gap-1 text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold">
+              <i class="fa-regular fa-comments"></i>
+              <span>コメント (${commentsCount})</span>
+            </button>
           </div>
         </div>
       `;
     }
 
-    window.quickUpdateTaskProgress = async function(taskId, val) {
-      if (!state.roomId) return;
-      const num = Number(val);
-      const updates = { progress: num, updatedAt: Date.now() };
-      if (num === 100) updates.status = '完了';
-
-      const idx = state.tasks.findIndex(t => t.id === taskId);
-      if (idx !== -1) {
-        state.tasks[idx] = { ...state.tasks[idx], ...updates };
-        saveRoomOfflineDataLocal(state.roomId);
-        renderTasks();
-      }
-
-      if (isFirebaseReady && db) {
-        try {
-          await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), updates);
-        } catch (e) {
-          showToast('進捗のクラウド同期に失敗しました', 'error');
-        }
-      }
-    };
-
-    window.toggleTaskAck = async function(taskId) {
-      if (!state.roomId) return;
-      const myId = getEffectiveAccountId();
-      if (!myId) return;
-      const task = state.tasks.find(t => t.id === taskId);
-      if (!task) return;
-      const acks = Array.isArray(task.acks) ? [...task.acks] : [];
-      const nextAcks = acks.includes(myId) ? acks.filter(id => id !== myId) : [...acks, myId];
-      task.acks = nextAcks;
-      saveRoomOfflineDataLocal(state.roomId);
-      renderTasks();
-
-      if (isFirebaseReady && db) {
-        try {
-          await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), { acks: nextAcks });
-        } catch (e) {}
-      }
-    };
-
-    window.toggleTaskAck = async function(taskId) {
-      if (!isFirebaseReady || !db || !state.roomId) return;
-      const myId = getEffectiveAccountId();
-      if (!myId) return;
-      const task = state.tasks.find(t => t.id === taskId);
-      if (!task) return;
-      const acks = Array.isArray(task.acks) ? [...task.acks] : [];
-      const nextAcks = acks.includes(myId) ? acks.filter(id => id !== myId) : [...acks, myId];
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId), { acks: nextAcks });
-      } catch (e) {}
-    };
-
     window.openTaskModal = function(taskId = '') {
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        openCreateGroupModal(true);
-        return;
-      }
-      const modal = document.getElementById('task-modal');
       const form = document.getElementById('task-form');
-      form.reset();
+      if (form) form.reset();
+      document.getElementById('task-id').value = taskId || '';
 
       if (taskId) {
         const t = state.tasks.find(item => item.id === taskId);
         if (!t) return;
-        document.getElementById('task-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-indigo-600"></i><span>作業内容を編集</span>`;
-        document.getElementById('task-id').value = t.id;
+        document.getElementById('task-modal-title').innerHTML = `<i class="fa-solid fa-pen text-indigo-600 dark:text-indigo-400"></i><span>仕事を編集</span>`;
         document.getElementById('task-title').value = t.title || '';
         document.getElementById('task-member').value = t.member || '';
         document.getElementById('task-status').value = t.status || '進行中';
-        document.getElementById('task-progress').value = t.progress ?? 0;
-        document.getElementById('task-progress-label').textContent = `${t.progress ?? 0}%`;
+        document.getElementById('task-progress').value = t.progress || 0;
+        document.getElementById('task-progress-label').textContent = `${t.progress || 0}%`;
         document.getElementById('task-priority').value = t.priority || '中';
         document.getElementById('task-tag').value = t.tag || '';
         document.getElementById('task-desc').value = t.desc || '';
         state.selectedTaskCollaborators = Array.isArray(t.collaborators) ? [...t.collaborators] : [];
       } else {
-        document.getElementById('task-modal-title').innerHTML = `<i class="fa-solid fa-rocket text-indigo-600"></i><span>進行中の仕事を報告</span>`;
-        document.getElementById('task-id').value = '';
-        document.getElementById('task-member').value = state.profile.name || '';
+        document.getElementById('task-modal-title').innerHTML = `<i class="fa-solid fa-rocket text-indigo-600 dark:text-indigo-400"></i><span>進行中の仕事を報告</span>`;
+        document.getElementById('task-member').value = state.profile.name !== 'ゲスト' ? state.profile.name : '';
+        document.getElementById('task-status').value = '進行中';
         document.getElementById('task-progress').value = 0;
         document.getElementById('task-progress-label').textContent = '0%';
+        document.getElementById('task-priority').value = '中';
         state.selectedTaskCollaborators = [];
       }
 
-      renderTaskCollaboratorSelector();
+      renderTaskCollaboratorsSelector();
+      const modal = document.getElementById('task-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     };
@@ -2520,22 +2330,25 @@
       modal.classList.remove('flex');
     };
 
-    function renderTaskCollaboratorSelector() {
-      const container = document.getElementById('task-collaborators-selector');
+    function renderTaskCollaboratorsSelector() {
+      const wrap = document.getElementById('task-collaborators-selector');
       const countEl = document.getElementById('task-collab-count');
-      if (!container) return;
+      if (!wrap) return;
+      if (countEl) countEl.textContent = `${state.selectedTaskCollaborators.length}人選択中`;
 
       const candidateNames = new Set(state.selectedTaskCollaborators);
       state.members.forEach(m => { if (m.name) candidateNames.add(m.name); });
-      if (state.profile.name) candidateNames.add(state.profile.name);
 
-      if (countEl) countEl.textContent = `${state.selectedTaskCollaborators.length}人選択中`;
+      if (candidateNames.size === 0) {
+        wrap.innerHTML = `<span class="text-[11px] text-slate-400">下の入力欄から共同作業者を追加できます</span>`;
+        return;
+      }
 
-      container.innerHTML = Array.from(candidateNames).map(name => {
+      wrap.innerHTML = Array.from(candidateNames).map(name => {
         const selected = state.selectedTaskCollaborators.includes(name);
         return `
-          <button type="button" onclick="toggleTaskCollaborator('${escapeHtml(name)}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${selected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-100'}">
-            ${selected ? '<i class="fa-solid fa-check mr-1 text-[10px]"></i>' : ''}${escapeHtml(name)}
+          <button type="button" onclick="toggleTaskCollaborator('${escapeHtml(name)}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition border ${selected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'}">
+            ${selected ? '<i class="fa-solid fa-check mr-1"></i>' : '+ '}${escapeHtml(name)}
           </button>
         `;
       }).join('');
@@ -2547,7 +2360,7 @@
       } else {
         state.selectedTaskCollaborators.push(name);
       }
-      renderTaskCollaboratorSelector();
+      renderTaskCollaboratorsSelector();
     };
 
     window.addCustomTaskCollaborator = function() {
@@ -2558,88 +2371,100 @@
         state.selectedTaskCollaborators.push(val);
       }
       input.value = '';
-      renderTaskCollaboratorSelector();
+      renderTaskCollaboratorsSelector();
     };
 
     window.saveTask = async function(e) {
       e.preventDefault();
       if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
+        showToast('先にグループを作成または選択してください', 'error');
         return;
       }
-
-      const id = document.getElementById('task-id').value;
-      const progress = Number(document.getElementById('task-progress').value);
+      const existingId = document.getElementById('task-id').value;
+      const progress = Number(document.getElementById('task-progress').value || 0);
       let status = document.getElementById('task-status').value;
-      if (progress === 100 && status !== '完了') status = '完了';
+      if (progress === 100 && status === '進行中') status = '完了';
 
       const payload = {
         roomId: state.roomId,
         title: document.getElementById('task-title').value.trim(),
         member: document.getElementById('task-member').value.trim(),
         status,
-        collaborators: state.selectedTaskCollaborators,
         progress,
         priority: document.getElementById('task-priority').value,
         tag: document.getElementById('task-tag').value.trim(),
         desc: document.getElementById('task-desc').value.trim(),
+        collaborators: [...state.selectedTaskCollaborators],
         updatedAt: Date.now()
       };
 
-      if (!isFirebaseReady || !db) {
-        if (id) {
-          const idx = state.tasks.findIndex(t => t.id === id);
-          if (idx !== -1) state.tasks[idx] = { ...state.tasks[idx], ...payload };
-          showToast('作業内容を更新しました');
-        } else {
-          state.tasks.unshift({
-            id: 'local-task-' + Date.now(),
-            ...payload,
-            createdAt: Date.now(),
-            comments: [],
-            acks: []
-          });
-          showToast('新しい仕事を共有しました');
-        }
-        saveRoomOfflineDataLocal(state.roomId);
+      if (existingId) {
+        const idx = state.tasks.findIndex(t => t.id === existingId);
+        if (idx >= 0) state.tasks[idx] = { ...state.tasks[idx], ...payload };
+        saveLocalRoomCache(state.roomId);
         renderTasks();
-        closeTaskModal();
-        return;
-      }
-
-      try {
-        const colRef = collection(db, `${getRoomBasePath(state.roomId)}/tasks`);
-        if (id) {
-          await updateDoc(doc(colRef, id), payload);
-          showToast('作業内容を更新しました');
-        } else {
-          payload.createdAt = Date.now();
-          payload.comments = [];
-          payload.acks = [];
-          await addDoc(colRef, payload);
-          showToast('新しい仕事を共有しました');
+        if (isFirebaseReady && db) {
+          try { await updateDoc(doc(db, `${basePath}/tasks`, existingId), payload); } catch (err) {}
         }
-        closeTaskModal();
-      } catch (err) {
-        console.error(err);
-        showToast('保存に失敗しました', 'error');
+        showToast('仕事の情報を更新しました');
+      } else {
+        const newId = 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+        const fullDoc = { id: newId, ...payload, comments: [], acknowledgedBy: [], createdAt: Date.now() };
+        state.tasks.unshift(fullDoc);
+        saveLocalRoomCache(state.roomId);
+        renderTasks();
+        if (isFirebaseReady && db) {
+          try { await setDoc(doc(db, `${basePath}/tasks`, newId), fullDoc); } catch (err) {}
+        }
+        showToast('新しい仕事を共有しました');
+      }
+      closeTaskModal();
+    };
+
+    window.quickUpdateTaskProgress = async function(taskId, val) {
+      const num = Number(val);
+      const t = state.tasks.find(item => item.id === taskId);
+      if (!t) return;
+      const newStatus = num === 100 ? '完了' : (t.status === '完了' && num < 100 ? '進行中' : t.status);
+      t.progress = num;
+      t.status = newStatus;
+      t.updatedAt = Date.now();
+      saveLocalRoomCache(state.roomId);
+      renderTasks();
+      if (isFirebaseReady && db) {
+        try { await updateDoc(doc(db, `${basePath}/tasks`, taskId), { progress: num, status: newStatus, updatedAt: Date.now() }); } catch (e) {}
       }
     };
 
-    window.deleteTask = function(taskId) {
-      openConfirmModal('この作業報告を削除してもよろしいですか？', async () => {
-        if (!isFirebaseReady || !db) {
+    window.toggleTaskAcknowledge = async function(taskId) {
+      const t = state.tasks.find(item => item.id === taskId);
+      if (!t) return;
+      const myAccId = getEffectiveAccountId();
+      const acks = Array.isArray(t.acknowledgedBy) ? [...t.acknowledgedBy] : [];
+      const idx = acks.indexOf(myAccId);
+      if (idx >= 0) acks.splice(idx, 1);
+      else acks.push(myAccId);
+      t.acknowledgedBy = acks;
+      saveLocalRoomCache(state.roomId);
+      renderTasks();
+      if (isFirebaseReady && db) {
+        try { await updateDoc(doc(db, `${basePath}/tasks`, taskId), { acknowledgedBy: acks }); } catch (e) {}
+      }
+    };
+
+    window.confirmDeleteTask = function(taskId, title) {
+      openConfirmDialog({
+        title: '仕事の削除',
+        message: `「${title}」を削除してもよろしいですか？`,
+        confirmLabel: '削除する',
+        onConfirm: async () => {
           state.tasks = state.tasks.filter(t => t.id !== taskId);
-          saveRoomOfflineDataLocal(state.roomId);
+          saveLocalRoomCache(state.roomId);
           renderTasks();
-          showToast('削除しました');
-          return;
-        }
-        try {
-          await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, taskId));
-          showToast('削除しました');
-        } catch (e) {
-          showToast('削除に失敗しました', 'error');
+          if (isFirebaseReady && db) {
+            try { await deleteDoc(doc(db, `${basePath}/tasks`, taskId)); } catch (e) {}
+          }
+          showToast('仕事を削除しました', 'info');
         }
       });
     };
@@ -2662,135 +2487,90 @@
     function renderTaskDetailModal(taskId) {
       const t = state.tasks.find(item => item.id === taskId);
       if (!t) return;
-
       const statusBadge = document.getElementById('detail-status-badge');
-      statusBadge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeClass(t.status)}`;
       statusBadge.textContent = t.status || '進行中';
-
+      statusBadge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold ${getStatusBadgeStyle(t.status || '進行中')}`;
       document.getElementById('detail-priority-badge').textContent = `優先度: ${t.priority || '中'}`;
       document.getElementById('detail-title').textContent = t.title || '';
       document.getElementById('detail-member').textContent = t.member || '未設定';
-      document.getElementById('detail-updated').textContent = t.updatedAt ? new Date(t.updatedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'たった今';
+      const updatedDate = t.updatedAt ? new Date(t.updatedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '---';
+      document.getElementById('detail-updated').textContent = updatedDate;
 
       const collabWrap = document.getElementById('detail-collaborators-wrap');
       const collabs = Array.isArray(t.collaborators) ? t.collaborators : [];
       if (collabs.length > 0) {
         collabWrap.classList.remove('hidden');
         collabWrap.classList.add('flex');
-        collabWrap.innerHTML = `<span class="text-[11px] font-semibold text-slate-400">共同作業:</span>` +
-          collabs.map(c => `<span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">${escapeHtml(c)}</span>`).join('');
+        collabWrap.innerHTML = `<span class="text-[11px] font-semibold text-slate-500">共同作業者:</span>` +
+          collabs.map(c => `<span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">${escapeHtml(c)}</span>`).join('');
       } else {
         collabWrap.classList.add('hidden');
-        collabWrap.classList.remove('flex');
       }
 
-      const progress = Number(t.progress ?? 0);
-      document.getElementById('detail-progress-text').textContent = `${progress}%`;
-      document.getElementById('detail-progress-bar').style.width = `${progress}%`;
-      document.getElementById('detail-desc').textContent = t.desc || '（詳細メモはありません）';
+      const prog = Number(t.progress || 0);
+      document.getElementById('detail-progress-text').textContent = `${prog}%`;
+      document.getElementById('detail-progress-bar').style.width = `${prog}%`;
+      document.getElementById('detail-desc').textContent = t.desc || '（詳細メモなし）';
 
       const comments = Array.isArray(t.comments) ? t.comments : [];
-      document.getElementById('detail-comment-count').textContent = comments.length;
+      document.getElementById('detail-comment-count').textContent = String(comments.length);
       const listEl = document.getElementById('detail-comments-list');
       if (comments.length === 0) {
-        listEl.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-3">まだコメントはありません</p>`;
+        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">まだコメントはありません</p>`;
       } else {
-        listEl.innerHTML = comments.map(c => `
-          <div class="bg-slate-50 dark:bg-zinc-800/80 p-2.5 rounded-xl border border-slate-100 dark:border-zinc-700/70">
-            <div class="flex items-center justify-between text-[10px] mb-1">
-              <span class="font-bold text-slate-700 dark:text-zinc-200">${escapeHtml(c.author || 'ゲスト')}</span>
-              <span class="text-slate-400">${c.createdAt ? new Date(c.createdAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+        listEl.innerHTML = comments.map(c => {
+          const timeStr = c.createdAt ? new Date(c.createdAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          return `
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-800/80 border border-slate-100 dark:border-zinc-700/80">
+              <div class="flex items-center justify-between text-[11px] mb-1">
+                <span class="font-bold text-slate-800 dark:text-zinc-200">${escapeHtml(c.author || 'メンバー')}</span>
+                <span class="text-[10px] text-slate-400">${escapeHtml(timeStr)}</span>
+              </div>
+              <p class="text-xs text-slate-600 dark:text-zinc-300 whitespace-pre-wrap">${escapeHtml(c.text || '')}</p>
             </div>
-            <p class="text-xs text-slate-600 dark:text-zinc-300 whitespace-pre-wrap">${escapeHtml(c.text)}</p>
-          </div>
-        `).join('');
+          `;
+        }).join('');
+        listEl.scrollTop = listEl.scrollHeight;
       }
     }
 
     window.submitTaskComment = async function(e) {
       e.preventDefault();
-      if (!state.activeDetailTaskId) return;
+      const taskId = state.activeDetailTaskId;
       const input = document.getElementById('new-comment-input');
       const text = (input?.value || '').trim();
-      if (!text) return;
+      if (!taskId || !text) return;
 
-      const task = state.tasks.find(t => t.id === state.activeDetailTaskId);
-      if (!task) return;
-      const nextComments = [
-        ...(Array.isArray(task.comments) ? task.comments : []),
-        { author: state.profile.name || 'ゲスト', text, createdAt: Date.now() }
-      ];
+      const t = state.tasks.find(item => item.id === taskId);
+      if (!t) return;
+      const comments = Array.isArray(t.comments) ? [...t.comments] : [];
+      comments.push({
+        author: state.profile.name || 'ゲスト',
+        text,
+        createdAt: Date.now()
+      });
+      t.comments = comments;
+      t.updatedAt = Date.now();
+      input.value = '';
+      saveLocalRoomCache(state.roomId);
+      renderTaskDetailModal(taskId);
+      renderTasks();
 
-      if (!isFirebaseReady || !db) {
-        task.comments = nextComments;
-        task.updatedAt = Date.now();
-        saveRoomOfflineDataLocal(state.roomId);
-        renderTaskDetailModal(task.id);
-        renderTasks();
-        input.value = '';
-        return;
-      }
-
-      try {
-        await updateDoc(doc(db, `${getRoomBasePath(state.roomId)}/tasks`, task.id), {
-          comments: nextComments,
-          updatedAt: Date.now()
-        });
-        input.value = '';
-      } catch (err) {
-        showToast('コメント送信に失敗しました', 'error');
+      if (isFirebaseReady && db) {
+        try { await updateDoc(doc(db, `${basePath}/tasks`, taskId), { comments, updatedAt: Date.now() }); } catch (err) {}
       }
     };
 
     // ==========================================
-    // 7. 共有カレンダー & 10色カラー分類
+    // 7. 共有カレンダー・10色カテゴリー・予定管理
     // ==========================================
-    function getCategoryColorObj(colorKey) {
-      return EVENT_COLORS.find(c => c.key === colorKey) || EVENT_COLORS[0];
-    }
-
-    function getCategoryLabel(colorKey) {
-      const custom = state.customCategoryLabels?.[colorKey];
-      if (custom && custom.trim()) return custom.trim();
-      return getCategoryColorObj(colorKey).defaultLabel;
-    }
-
-    function renderCalendarLegend() {
-      const legend = document.getElementById('calendar-legend');
-      const resetBtn = document.getElementById('btn-reset-color-filter');
-      const countBadge = document.getElementById('active-color-filter-count');
-      if (!legend) return;
-
-      const selectedCount = state.selectedEventColors.length;
-      if (resetBtn) {
-        resetBtn.classList.toggle('hidden', selectedCount === 0);
-      }
-      if (countBadge) {
-        countBadge.classList.toggle('hidden', selectedCount === 0);
-        countBadge.textContent = selectedCount;
-      }
-
-      legend.innerHTML = EVENT_COLORS.map(c => {
-        const label = getCategoryLabel(c.key);
-        const isSelected = state.selectedEventColors.includes(c.key);
-        return `
-          <button type="button" onclick="toggleEventColorFilter('${c.key}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition ${isSelected ? 'ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50 dark:bg-indigo-500/25 text-indigo-800 dark:text-indigo-200' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-50'}">
-            <span class="w-2.5 h-2.5 rounded-full ${c.dot} shrink-0"></span>
-            <span>${escapeHtml(label)}</span>
-          </button>
-        `;
-      }).join('');
-    }
-
     window.toggleColorFilterDrawer = function() {
       const drawer = document.getElementById('color-filter-drawer');
       const chevron = document.getElementById('color-filter-chevron');
       if (!drawer) return;
       const isHidden = drawer.classList.contains('hidden');
       drawer.classList.toggle('hidden', !isHidden);
-      if (chevron) {
-        chevron.classList.toggle('rotate-180', isHidden);
-      }
+      if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
     };
 
     window.toggleEventColorFilter = function(colorKey) {
@@ -2802,9 +2582,6 @@
       renderCalendarLegend();
       renderCalendar();
       renderEventsList();
-      if (!document.getElementById('day-events-modal').classList.contains('hidden') && state.selectedDate) {
-        openDayEventsModal(state.selectedDate);
-      }
     };
 
     window.clearEventColorFilter = function() {
@@ -2812,19 +2589,43 @@
       renderCalendarLegend();
       renderCalendar();
       renderEventsList();
-      if (!document.getElementById('day-events-modal').classList.contains('hidden') && state.selectedDate) {
-        openDayEventsModal(state.selectedDate);
-      }
     };
+
+    function renderCalendarLegend() {
+      const legendEl = document.getElementById('calendar-legend');
+      const countBadge = document.getElementById('active-color-filter-count');
+      const resetBtn = document.getElementById('btn-reset-color-filter');
+      if (!legendEl) return;
+
+      const selectedCount = state.selectedEventColors.length;
+      if (countBadge) {
+        countBadge.textContent = String(selectedCount);
+        countBadge.classList.toggle('hidden', selectedCount === 0);
+      }
+      if (resetBtn) {
+        resetBtn.classList.toggle('hidden', selectedCount === 0);
+      }
+
+      legendEl.innerHTML = EVENT_COLORS.map(c => {
+        const meta = getCategoryMeta(c.key);
+        const isSelected = state.selectedEventColors.includes(c.key);
+        return `
+          <button type="button" onclick="toggleEventColorFilter('${c.key}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs' : 'bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800'}">
+            <span class="w-2.5 h-2.5 rounded-full ${c.dot}"></span>
+            <span>${escapeHtml(meta.label)}</span>
+          </button>
+        `;
+      }).join('');
+    }
 
     window.changeMonth = function(delta) {
       state.currentMonth += delta;
-      if (state.currentMonth < 0) {
-        state.currentMonth = 11;
-        state.currentYear -= 1;
-      } else if (state.currentMonth > 11) {
+      if (state.currentMonth > 11) {
         state.currentMonth = 0;
         state.currentYear += 1;
+      } else if (state.currentMonth < 0) {
+        state.currentMonth = 11;
+        state.currentYear -= 1;
       }
       renderCalendar();
     };
@@ -2833,161 +2634,116 @@
       const now = new Date();
       state.currentYear = now.getFullYear();
       state.currentMonth = now.getMonth();
-      state.selectedDate = null;
-      document.getElementById('btn-clear-date-filter')?.classList.add('hidden');
+      state.selectedDate = formatDateStr(now);
       renderCalendar();
       renderEventsList();
     };
 
     window.clearSelectedDate = function() {
       state.selectedDate = null;
-      document.getElementById('btn-clear-date-filter')?.classList.add('hidden');
       renderCalendar();
       renderEventsList();
     };
 
     function getFilteredEvents() {
       if (state.selectedEventColors.length === 0) return state.events;
-      return state.events.filter(ev => state.selectedEventColors.includes(ev.color || 'blue'));
-    }
-
-    function sortEventsByTime(list) {
-      return [...list].sort((a, b) => {
-        if (a.allDay && !b.allDay) return -1;
-        if (!a.allDay && b.allDay) return 1;
-        const tA = a.time || '99:99';
-        const tB = b.time || '99:99';
-        return tA.localeCompare(tB);
-      });
+      return state.events.filter(ev => state.selectedEventColors.includes(ev.category || 'blue'));
     }
 
     function renderCalendar() {
-      const label = document.getElementById('calendar-month-label');
       const grid = document.getElementById('calendar-grid');
-      const badgeCount = document.getElementById('badge-event-count');
+      const monthLabel = document.getElementById('calendar-month-label');
+      const badgeEl = document.getElementById('badge-event-count');
       if (!grid) return;
 
-      if (label) label.textContent = `${state.currentYear}年 ${state.currentMonth + 1}月`;
-      if (badgeCount) badgeCount.textContent = state.events.length;
+      if (monthLabel) monthLabel.textContent = `${state.currentYear}年 ${state.currentMonth + 1}月`;
+      if (badgeEl) badgeEl.textContent = String(state.events.length);
 
       const firstDay = new Date(state.currentYear, state.currentMonth, 1).getDay();
       const daysInMonth = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
-      const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-      const todayStr = getTodayStr();
+      const todayStr = formatDateStr(new Date());
       const filteredEvents = getFilteredEvents();
 
       let html = '';
-      for (let cellIdx = 0; cellIdx < totalCells; cellIdx++) {
-        const isLastCol = (cellIdx % 7) === 6;
-        const isLastRow = cellIdx >= totalCells - 7;
-        const borderClasses = `${isLastCol ? '' : 'border-r'} ${isLastRow ? '' : 'border-b'} border-slate-200/90 dark:border-zinc-800`;
+      for (let i = 0; i < firstDay; i++) {
+        html += `<div class="min-h-[82px] sm:min-h-[96px] bg-slate-50/60 dark:bg-zinc-950/50 border-r border-b border-slate-100 dark:border-zinc-800/80"></div>`;
+      }
 
-        if (cellIdx < firstDay || cellIdx >= firstDay + daysInMonth) {
-          html += `<div class="min-h-[82px] sm:min-h-[96px] bg-slate-50/70 dark:bg-zinc-950/50 ${borderClasses}"></div>`;
-          continue;
-        }
-
-        const d = cellIdx - firstDay + 1;
-        const dateStr = formatDateStr(state.currentYear, state.currentMonth, d);
-        const dayEvents = sortEventsByTime(filteredEvents.filter(ev => ev.date === dateStr));
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateObj = new Date(state.currentYear, state.currentMonth, d);
+        const dateStr = formatDateStr(dateObj);
+        const dayOfWeek = dateObj.getDay();
         const isToday = dateStr === todayStr;
         const isSelected = dateStr === state.selectedDate;
-        const dow = cellIdx % 7;
-        const dayTextColor = dow === 0 ? 'text-rose-500 dark:text-rose-400' : dow === 6 ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-600 dark:text-zinc-300';
+
+        const dayEvents = filteredEvents
+          .filter(ev => ev.date === dateStr)
+          .sort((a, b) => (a.allDay ? '00:00' : (a.time || '23:59')).localeCompare(b.allDay ? '00:00' : (b.time || '23:59')));
+
+        const numColor = dayOfWeek === 0 ? 'text-rose-500' : dayOfWeek === 6 ? 'text-indigo-500' : 'text-slate-600 dark:text-zinc-300';
 
         html += `
-          <button type="button" onclick="openDayEventsModal('${dateStr}')" class="min-h-[82px] sm:min-h-[96px] p-0.5 sm:p-1 text-left flex flex-col justify-start transition overflow-hidden ${borderClasses} ${isSelected ? 'bg-indigo-50/90 dark:bg-indigo-500/20 ring-2 ring-inset ring-indigo-500' : isToday ? 'bg-emerald-50/60 dark:bg-emerald-500/15' : 'bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/80'}">
-            <div class="flex items-center justify-between w-full mb-0.5 px-0.5">
-              <span class="text-[10px] sm:text-[11px] font-bold leading-none ${isToday ? 'w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px]' : dayTextColor}">${d}</span>
-              ${dayEvents.length > 0 ? `<span class="text-[8px] sm:text-[9px] font-bold text-slate-400 dark:text-zinc-500 leading-none">${dayEvents.length}</span>` : ''}
+          <div onclick="handleCalendarDayClick('${dateStr}')" class="min-h-[82px] sm:min-h-[96px] p-0.5 sm:p-1 border-r border-b border-slate-200/70 dark:border-zinc-800 cursor-pointer transition flex flex-col gap-0.5 overflow-hidden ${isSelected ? 'bg-indigo-50/70 dark:bg-indigo-500/15 ring-1 ring-inset ring-indigo-500' : 'hover:bg-slate-50 dark:hover:bg-zinc-800/50'}">
+            <div class="flex items-center justify-between px-0.5">
+              <span class="${isToday ? 'w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[9.5px] font-bold' : `text-[10px] font-semibold ${numColor}`}">${d}</span>
             </div>
-            <div class="flex flex-col gap-0.5 w-full min-w-0">
+            <div class="flex flex-col gap-0.5 overflow-hidden">
               ${dayEvents.slice(0, 3).map(ev => {
-                const c = getCategoryColorObj(ev.color);
-                return `<div class="w-full px-0.5 sm:px-1 py-[1px] rounded-[3px] text-[9.5px] sm:text-[10.5px] leading-tight tracking-tighter font-semibold truncate ${c.pill}" title="${escapeHtml(ev.title)}">${escapeHtml(ev.title)}</div>`;
+                const cat = getCategoryMeta(ev.category || 'blue');
+                return `<div class="px-0.5 py-0.2 rounded text-[9.5px] sm:text-[10.5px] font-semibold tracking-tighter truncate leading-tight ${cat.pill}" title="${escapeHtml(ev.title)}">${escapeHtml(ev.title)}</div>`;
               }).join('')}
-              ${dayEvents.length > 3 ? `<div class="text-[8.5px] font-bold text-slate-400 dark:text-zinc-400 pl-0.5 leading-none">+${dayEvents.length - 3}件</div>` : ''}
+              ${dayEvents.length > 3 ? `<div class="text-[9px] font-bold text-slate-400 px-0.5">+${dayEvents.length - 3}件</div>` : ''}
             </div>
-          </button>
+          </div>
         `;
       }
+
       grid.innerHTML = html;
     }
 
-    function renderEventsList() {
-      const container = document.getElementById('events-list-container');
-      const titleEl = document.getElementById('upcoming-events-title');
-      if (!container) return;
-
-      const todayStr = getTodayStr();
-      const filtered = getFilteredEvents();
-      let targetEvents = [];
-
-      if (state.selectedDate) {
-        if (titleEl) titleEl.innerHTML = `<i class="fa-regular fa-calendar-check text-indigo-600"></i> ${escapeHtml(state.selectedDate)} の予定`;
-        targetEvents = sortEventsByTime(filtered.filter(ev => ev.date === state.selectedDate));
-      } else {
-        if (titleEl) titleEl.innerHTML = `<i class="fa-regular fa-clock text-emerald-600 dark:text-emerald-400"></i> 今後の予定一覧`;
-        targetEvents = filtered
-          .filter(ev => (ev.date || '') >= todayStr)
-          .sort((a, b) => {
-            if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '');
-            if (a.allDay && !b.allDay) return -1;
-            if (!a.allDay && b.allDay) return 1;
-            return (a.time || '99:99').localeCompare(b.time || '99:99');
-          });
-      }
-
-      if (targetEvents.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 dark:text-zinc-500 text-center py-6">表示する予定がありません</p>`;
-        return;
-      }
-
-      container.innerHTML = targetEvents.map(ev => {
-        const c = getCategoryColorObj(ev.color);
-        const catLabel = getCategoryLabel(ev.color);
-        const timeStr = ev.allDay ? '終日' : (ev.time || '時間未定');
-        const collabs = Array.isArray(ev.collaborators) ? ev.collaborators : [];
-        return `
-          <div onclick="openEventModal('${escapeHtml(ev.id)}')" class="cursor-pointer bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 transition flex items-start justify-between gap-2 shadow-2xs">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${c.badge}">${escapeHtml(catLabel)}</span>
-                <span class="text-[11px] font-mono font-bold text-slate-500 dark:text-zinc-400">${escapeHtml(ev.date)} ${escapeHtml(timeStr)}</span>
-              </div>
-              <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(ev.title)}</div>
-              ${(ev.member || collabs.length > 0) ? `
-                <div class="text-[10px] text-slate-500 dark:text-zinc-400 mt-1 truncate">
-                  <i class="fa-regular fa-user mr-1"></i>${escapeHtml([ev.member, ...collabs].filter(Boolean).join(', '))}
-                </div>
-              ` : ''}
-            </div>
-            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 mt-1 shrink-0"></i>
-          </div>
-        `;
-      }).join('');
-    }
-
-    window.openDayEventsModal = function(dateStr) {
+    window.handleCalendarDayClick = function(dateStr) {
       state.selectedDate = dateStr;
-      document.getElementById('btn-clear-date-filter')?.classList.remove('hidden');
       renderCalendar();
       renderEventsList();
+      openDayEventsModal(dateStr);
+    };
 
-      const modal = document.getElementById('day-events-modal');
+    function openDayEventsModal(dateStr) {
       const titleEl = document.getElementById('day-modal-date-title');
       const countEl = document.getElementById('day-modal-event-count');
       const listEl = document.getElementById('day-modal-events-list');
       const addBtn = document.getElementById('btn-day-modal-add-event');
 
-      const [y, m, d] = dateStr.split('-').map(Number);
-      const dowNames = ['日', '月', '火', '水', '木', '金', '土'];
-      const dow = new Date(y, m - 1, d).getDay();
-      if (titleEl) titleEl.textContent = `${y}年${m}月${d}日 (${dowNames[dow]})`;
+      const [y, m, d] = dateStr.split('-');
+      if (titleEl) titleEl.textContent = `${y}年${Number(m)}月${Number(d)}日の予定`;
 
-      const filtered = getFilteredEvents();
-      const dayEvents = sortEventsByTime(filtered.filter(ev => ev.date === dateStr));
+      const dayEvents = getFilteredEvents()
+        .filter(ev => ev.date === dateStr)
+        .sort((a, b) => (a.allDay ? '00:00' : (a.time || '23:59')).localeCompare(b.allDay ? '00:00' : (b.time || '23:59')));
+
       if (countEl) countEl.textContent = `予定 ${dayEvents.length}件（時間が早い順に表示）`;
+
+      if (dayEvents.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">この日の予定はまだ登録されていません</p>`;
+      } else {
+        listEl.innerHTML = dayEvents.map(ev => {
+          const cat = getCategoryMeta(ev.category || 'blue');
+          const timeText = ev.allDay ? '終日' : (ev.time || '--:--');
+          return `
+            <div onclick="closeDayEventsModal(); openEventModal('${escapeHtml(ev.id)}')" class="p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-800/70 hover:border-emerald-400 transition cursor-pointer flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${cat.badge}">${escapeHtml(cat.label)}</span>
+                  <span class="text-xs font-bold text-slate-700 dark:text-zinc-200">${escapeHtml(timeText)}</span>
+                </div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">${escapeHtml(ev.title)}</h4>
+                ${ev.memo ? `<p class="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 line-clamp-2">${escapeHtml(ev.memo)}</p>` : ''}
+              </div>
+              <i class="fa-solid fa-pen text-xs text-slate-400 mt-1"></i>
+            </div>
+          `;
+        }).join('');
+      }
 
       if (addBtn) {
         addBtn.onclick = () => {
@@ -2996,38 +2752,10 @@
         };
       }
 
-      if (dayEvents.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-slate-400 dark:text-zinc-500 text-center py-8">この日の予定はまだありません</p>`;
-      } else {
-        listEl.innerHTML = dayEvents.map(ev => {
-          const c = getCategoryColorObj(ev.color);
-          const catLabel = getCategoryLabel(ev.color);
-          const timeStr = ev.allDay ? '終日' : (ev.time || '時間未定');
-          const collabs = Array.isArray(ev.collaborators) ? ev.collaborators : [];
-          return `
-            <div onclick="closeDayEventsModal(); openEventModal('${escapeHtml(ev.id)}')" class="cursor-pointer bg-slate-50/90 dark:bg-zinc-800/80 hover:bg-slate-100 dark:hover:bg-zinc-800 p-3.5 rounded-xl border border-slate-200/80 dark:border-zinc-700 transition">
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${c.badge}">${escapeHtml(catLabel)}</span>
-                  <span class="text-xs font-mono font-bold text-slate-700 dark:text-zinc-200">${escapeHtml(timeStr)}</span>
-                </div>
-                <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">編集 <i class="fa-solid fa-pen text-[9px]"></i></span>
-              </div>
-              <div class="text-sm font-bold text-slate-900 dark:text-white mb-1">${escapeHtml(ev.title)}</div>
-              ${ev.memo ? `<p class="text-xs text-slate-600 dark:text-zinc-300 whitespace-pre-wrap mb-1.5">${escapeHtml(ev.memo)}</p>` : ''}
-              ${(ev.member || collabs.length > 0) ? `
-                <div class="text-[11px] text-slate-500 dark:text-zinc-400">
-                  <i class="fa-regular fa-user mr-1"></i>参加: ${escapeHtml([ev.member, ...collabs].filter(Boolean).join('、'))}
-                </div>
-              ` : ''}
-            </div>
-          `;
-        }).join('');
-      }
-
+      const modal = document.getElementById('day-events-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-    };
+    }
 
     window.closeDayEventsModal = function() {
       const modal = document.getElementById('day-events-modal');
@@ -3035,39 +2763,100 @@
       modal.classList.remove('flex');
     };
 
-    function renderEventCategoryControls() {
-      const palette = document.getElementById('event-color-palette');
-      const select = document.getElementById('event-category');
-      if (!palette || !select) return;
+    function renderEventsList() {
+      const container = document.getElementById('events-list-container');
+      const titleEl = document.getElementById('upcoming-events-title');
+      const clearBtn = document.getElementById('btn-clear-date-filter');
+      if (!container) return;
 
-      const currentVal = select.value || 'blue';
-      palette.innerHTML = EVENT_COLORS.map(c => {
-        const isSel = c.key === currentVal;
+      const todayStr = formatDateStr(new Date());
+      let list = getFilteredEvents();
+
+      if (state.selectedDate) {
+        list = list.filter(ev => ev.date === state.selectedDate);
+        if (titleEl) titleEl.innerHTML = `<i class="fa-regular fa-clock text-emerald-600 dark:text-emerald-400"></i> ${escapeHtml(state.selectedDate)} の予定`;
+        if (clearBtn) clearBtn.classList.remove('hidden');
+      } else {
+        list = list.filter(ev => (ev.date || '') >= todayStr);
+        if (titleEl) titleEl.innerHTML = `<i class="fa-regular fa-clock text-emerald-600 dark:text-emerald-400"></i> 今後の予定一覧`;
+        if (clearBtn) clearBtn.classList.add('hidden');
+      }
+
+      list.sort((a, b) => {
+        const cmpDate = (a.date || '').localeCompare(b.date || '');
+        if (cmpDate !== 0) return cmpDate;
+        return (a.allDay ? '00:00' : (a.time || '23:59')).localeCompare(b.allDay ? '00:00' : (b.time || '23:59'));
+      });
+
+      if (list.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 dark:text-zinc-500 text-center py-6">該当する予定はありません</p>`;
+        return;
+      }
+
+      container.innerHTML = list.map(ev => {
+        const cat = getCategoryMeta(ev.category || 'blue');
+        const timeText = ev.allDay ? '終日' : (ev.time || '--:--');
+        const collabs = Array.isArray(ev.collaborators) ? ev.collaborators : [];
         return `
-          <button type="button" onclick="selectEventColor('${c.key}')" class="h-7 rounded-lg ${c.dot} flex items-center justify-center text-white text-xs transition ${isSel ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ring-slate-900 dark:ring-white scale-105' : 'opacity-80 hover:opacity-100'}" title="${escapeHtml(getCategoryLabel(c.key))}">
-            ${isSel ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}
+          <div onclick="openEventModal('${escapeHtml(ev.id)}')" class="p-2.5 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 hover:border-emerald-300 dark:hover:border-emerald-500/40 transition cursor-pointer flex items-start justify-between gap-2 shadow-2xs">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                <span class="text-[11px] font-bold text-slate-600 dark:text-zinc-300">${escapeHtml(ev.date)}</span>
+                <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">${escapeHtml(timeText)}</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold border ${cat.badge}">${escapeHtml(cat.label)}</span>
+              </div>
+              <h5 class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(ev.title)}</h5>
+              ${(ev.member || collabs.length > 0) ? `
+                <p class="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 truncate">
+                  担当: ${escapeHtml(ev.member || '未設定')}${collabs.length > 0 ? ` / 参加: ${escapeHtml(collabs.join(', '))}` : ''}
+                </p>
+              ` : ''}
+            </div>
+            <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 mt-1.5"></i>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderEventCategoryControls() {
+      const paletteEl = document.getElementById('event-color-palette');
+      const selectEl = document.getElementById('event-category');
+      if (!paletteEl || !selectEl) return;
+
+      const currentVal = selectEl.value || 'blue';
+      selectEl.innerHTML = EVENT_COLORS.map(c => {
+        const meta = getCategoryMeta(c.key);
+        return `<option value="${c.key}">${escapeHtml(meta.label)}</option>`;
+      }).join('');
+      selectEl.value = currentVal;
+
+      paletteEl.innerHTML = EVENT_COLORS.map(c => {
+        const meta = getCategoryMeta(c.key);
+        const active = selectEl.value === c.key;
+        return `
+          <button type="button" onclick="selectEventColor('${c.key}')" class="flex flex-col items-center gap-1 p-1.5 rounded-xl border transition ${active ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-500/20' : 'border-transparent hover:bg-slate-100 dark:hover:bg-zinc-700'}">
+            <span class="w-4 h-4 rounded-full ${c.dot} shadow-2xs"></span>
+            <span class="text-[9px] font-semibold text-slate-600 dark:text-zinc-300 truncate max-w-full">${escapeHtml(meta.label)}</span>
           </button>
         `;
       }).join('');
 
-      select.innerHTML = EVENT_COLORS.map(c => `<option value="${c.key}">${escapeHtml(getCategoryLabel(c.key))}</option>`).join('');
-      select.value = currentVal;
       updateEventCategoryPreview();
     }
 
-    window.selectEventColor = function(colorKey) {
-      const select = document.getElementById('event-category');
-      if (select) select.value = colorKey;
+    window.selectEventColor = function(key) {
+      const selectEl = document.getElementById('event-category');
+      if (selectEl) selectEl.value = key;
       renderEventCategoryControls();
     };
 
     window.updateEventCategoryPreview = function() {
-      const select = document.getElementById('event-category');
-      const badge = document.getElementById('selected-event-color-badge');
-      if (!select || !badge) return;
-      const c = getCategoryColorObj(select.value);
-      badge.className = `px-2 py-0.5 rounded-md text-[10px] font-bold border ${c.badge}`;
-      badge.textContent = getCategoryLabel(c.key);
+      const selectEl = document.getElementById('event-category');
+      const badgeEl = document.getElementById('selected-event-color-badge');
+      if (!selectEl || !badgeEl) return;
+      const meta = getCategoryMeta(selectEl.value);
+      badgeEl.textContent = meta.label;
+      badgeEl.className = `px-2 py-0.5 rounded-md text-[10px] font-bold border ${meta.badge}`;
     };
 
     window.toggleEventTimeInput = function() {
@@ -3079,46 +2868,40 @@
       }
     };
 
-    window.openEventModal = function(eventId = '', defaultDate = '') {
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        openCreateGroupModal(true);
-        return;
-      }
-      const modal = document.getElementById('event-modal');
+    window.openEventModal = function(eventId = '', prefillDate = '') {
       const form = document.getElementById('event-form');
-      const delBtn = document.getElementById('btn-delete-event');
-      form.reset();
+      if (form) form.reset();
+      document.getElementById('event-id').value = eventId || '';
+      const deleteBtn = document.getElementById('btn-delete-event');
 
       if (eventId) {
         const ev = state.events.find(item => item.id === eventId);
         if (!ev) return;
-        document.getElementById('event-modal-title').innerHTML = `<i class="fa-regular fa-calendar-check text-emerald-600"></i><span>予定を編集</span>`;
-        document.getElementById('event-id').value = ev.id;
+        document.getElementById('event-modal-title').innerHTML = `<i class="fa-solid fa-pen text-emerald-600 dark:text-emerald-400"></i><span>予定を編集</span>`;
         document.getElementById('event-title').value = ev.title || '';
-        document.getElementById('event-date').value = ev.date || getTodayStr();
+        document.getElementById('event-date').value = ev.date || formatDateStr(new Date());
         document.getElementById('event-allday').checked = !!ev.allDay;
         document.getElementById('event-time').value = ev.time || '10:00';
-        document.getElementById('event-category').value = ev.color || 'blue';
-        document.getElementById('event-member').value = ev.member || state.profile.name || '';
+        document.getElementById('event-category').value = ev.category || 'blue';
+        document.getElementById('event-member').value = ev.member || '';
         document.getElementById('event-memo').value = ev.memo || '';
         state.selectedEventCollaborators = Array.isArray(ev.collaborators) ? [...ev.collaborators] : [];
-        delBtn.classList.remove('hidden');
+        if (deleteBtn) deleteBtn.classList.remove('hidden');
       } else {
-        document.getElementById('event-modal-title').innerHTML = `<i class="fa-regular fa-calendar-plus text-emerald-600"></i><span>今後の予定を追加</span>`;
-        document.getElementById('event-id').value = '';
-        document.getElementById('event-date').value = defaultDate || state.selectedDate || getTodayStr();
+        document.getElementById('event-modal-title').innerHTML = `<i class="fa-regular fa-calendar-plus text-emerald-600 dark:text-emerald-400"></i><span>今後の予定を追加</span>`;
+        document.getElementById('event-date').value = prefillDate || state.selectedDate || formatDateStr(new Date());
         document.getElementById('event-allday').checked = false;
         document.getElementById('event-time').value = '10:00';
         document.getElementById('event-category').value = 'blue';
-        document.getElementById('event-member').value = state.profile.name || '';
+        document.getElementById('event-member').value = state.profile.name !== 'ゲスト' ? state.profile.name : '';
         state.selectedEventCollaborators = [];
-        delBtn.classList.add('hidden');
+        if (deleteBtn) deleteBtn.classList.add('hidden');
       }
 
       toggleEventTimeInput();
       renderEventCategoryControls();
-      renderEventCollaboratorSelector();
+      renderEventCollaboratorsSelector();
+      const modal = document.getElementById('event-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     };
@@ -3129,22 +2912,25 @@
       modal.classList.remove('flex');
     };
 
-    function renderEventCollaboratorSelector() {
-      const container = document.getElementById('event-collaborators-selector');
+    function renderEventCollaboratorsSelector() {
+      const wrap = document.getElementById('event-collaborators-selector');
       const countEl = document.getElementById('event-collab-count');
-      if (!container) return;
+      if (!wrap) return;
+      if (countEl) countEl.textContent = `${state.selectedEventCollaborators.length}人選択中`;
 
       const candidateNames = new Set(state.selectedEventCollaborators);
       state.members.forEach(m => { if (m.name) candidateNames.add(m.name); });
-      if (state.profile.name) candidateNames.add(state.profile.name);
 
-      if (countEl) countEl.textContent = `${state.selectedEventCollaborators.length}人選択中`;
+      if (candidateNames.size === 0) {
+        wrap.innerHTML = `<span class="text-[11px] text-slate-400">下の入力欄から参加者を追加できます</span>`;
+        return;
+      }
 
-      container.innerHTML = Array.from(candidateNames).map(name => {
+      wrap.innerHTML = Array.from(candidateNames).map(name => {
         const selected = state.selectedEventCollaborators.includes(name);
         return `
-          <button type="button" onclick="toggleEventCollaborator('${escapeHtml(name)}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${selected ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-zinc-900 text-slate-600 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-100'}">
-            ${selected ? '<i class="fa-solid fa-check mr-1 text-[10px]"></i>' : ''}${escapeHtml(name)}
+          <button type="button" onclick="toggleEventCollaborator('${escapeHtml(name)}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold transition border ${selected ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 border-slate-200 dark:border-zinc-700'}">
+            ${selected ? '<i class="fa-solid fa-check mr-1"></i>' : '+ '}${escapeHtml(name)}
           </button>
         `;
       }).join('');
@@ -3156,7 +2942,7 @@
       } else {
         state.selectedEventCollaborators.push(name);
       }
-      renderEventCollaboratorSelector();
+      renderEventCollaboratorsSelector();
     };
 
     window.addCustomEventCollaborator = function() {
@@ -3167,175 +2953,84 @@
         state.selectedEventCollaborators.push(val);
       }
       input.value = '';
-      renderEventCollaboratorSelector();
+      renderEventCollaboratorsSelector();
     };
 
     window.saveEvent = async function(e) {
       e.preventDefault();
       if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
+        showToast('先にグループを作成または選択してください', 'error');
         return;
       }
-
-      const id = document.getElementById('event-id').value;
-      const allDay = document.getElementById('event-allday').checked;
+      const existingId = document.getElementById('event-id').value;
       const payload = {
         roomId: state.roomId,
         title: document.getElementById('event-title').value.trim(),
         date: document.getElementById('event-date').value,
-        allDay,
-        time: allDay ? '' : document.getElementById('event-time').value,
-        color: document.getElementById('event-category').value,
+        allDay: document.getElementById('event-allday').checked,
+        time: document.getElementById('event-time').value,
+        category: document.getElementById('event-category').value,
         member: document.getElementById('event-member').value.trim(),
-        collaborators: state.selectedEventCollaborators,
         memo: document.getElementById('event-memo').value.trim(),
+        collaborators: [...state.selectedEventCollaborators],
         updatedAt: Date.now()
       };
 
-      if (!isFirebaseReady || !db) {
-        if (id) {
-          const idx = state.events.findIndex(ev => ev.id === id);
-          if (idx !== -1) state.events[idx] = { ...state.events[idx], ...payload };
-          showToast('予定を更新しました');
-        } else {
-          state.events.push({
-            id: 'local-ev-' + Date.now(),
-            ...payload,
-            createdAt: Date.now()
-          });
-          showToast('予定をカレンダーに追加しました');
-        }
-        saveRoomOfflineDataLocal(state.roomId);
+      if (existingId) {
+        const idx = state.events.findIndex(ev => ev.id === existingId);
+        if (idx >= 0) state.events[idx] = { ...state.events[idx], ...payload };
+        saveLocalRoomCache(state.roomId);
         renderCalendar();
         renderEventsList();
-        closeEventModal();
-        return;
-      }
-
-      try {
-        const colRef = collection(db, `${getRoomBasePath(state.roomId)}/events`);
-        if (id) {
-          await updateDoc(doc(colRef, id), payload);
-          showToast('予定を更新しました');
-        } else {
-          payload.createdAt = Date.now();
-          await addDoc(colRef, payload);
-          showToast('予定をカレンダーに追加しました');
+        if (isFirebaseReady && db) {
+          try { await updateDoc(doc(db, `${basePath}/events`, existingId), payload); } catch (err) {}
         }
-        closeEventModal();
-      } catch (err) {
-        console.error(err);
-        showToast('予定の保存に失敗しました', 'error');
-      }
-    };
-
-    window.deleteCurrentEvent = function() {
-      const id = document.getElementById('event-id').value;
-      if (!id) return;
-      openConfirmModal('この予定を削除してもよろしいですか？', async () => {
-        if (!isFirebaseReady || !db) {
-          state.events = state.events.filter(ev => ev.id !== id);
-          saveRoomOfflineDataLocal(state.roomId);
-          renderCalendar();
-          renderEventsList();
-          closeEventModal();
-          showToast('予定を削除しました');
-          return;
+        showToast('予定を更新しました');
+      } else {
+        const newId = 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+        const fullDoc = { id: newId, ...payload, createdAt: Date.now() };
+        state.events.push(fullDoc);
+        saveLocalRoomCache(state.roomId);
+        renderCalendar();
+        renderEventsList();
+        if (isFirebaseReady && db) {
+          try { await setDoc(doc(db, `${basePath}/events`, newId), fullDoc); } catch (err) {}
         }
-        try {
-          await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/events`, id));
-          closeEventModal();
-          showToast('予定を削除しました');
-        } catch (e) {
-          showToast('削除に失敗しました', 'error');
-        }
-      });
-    };
-
-    window.openCategoryLabelsModal = function() {
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        return;
+        showToast('カレンダーに予定を登録しました');
       }
-      const container = document.getElementById('category-labels-inputs');
-      container.innerHTML = EVENT_COLORS.map(c => {
-        const currentVal = state.customCategoryLabels?.[c.key] || '';
-        return `
-          <div class="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/80 p-2 rounded-xl border border-slate-200/70 dark:border-zinc-700">
-            <span class="w-4 h-4 rounded-full ${c.dot} shrink-0"></span>
-            <input type="text" id="cat-label-input-${c.key}" value="${escapeHtml(currentVal)}" placeholder="${escapeHtml(c.defaultLabel)}" class="flex-1 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none">
-          </div>
-        `;
-      }).join('');
-
-      const modal = document.getElementById('category-labels-modal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      closeEventModal();
     };
 
-    window.closeCategoryLabelsModal = function() {
-      const modal = document.getElementById('category-labels-modal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    };
-
-    window.resetCategoryLabelsToDefault = function() {
-      EVENT_COLORS.forEach(c => {
-        const input = document.getElementById(`cat-label-input-${c.key}`);
-        if (input) input.value = '';
-      });
-    };
-
-    window.saveCategoryLabels = async function(e) {
-      if (e) e.preventDefault();
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        return;
-      }
-      const newLabels = {};
-      EVENT_COLORS.forEach(c => {
-        const inputEl = document.getElementById(`cat-label-input-${c.key}`);
-        const val = (inputEl ? inputEl.value : '').trim();
-        if (val) newLabels[c.key] = val;
-      });
-
-      state.customCategoryLabels = newLabels;
-      saveRoomCategoryLabelsLocal(state.roomId, newLabels);
-      renderCalendarLegend();
-      renderEventCategoryControls();
+    window.deleteCurrentEvent = async function() {
+      const existingId = document.getElementById('event-id').value;
+      if (!existingId) return;
+      state.events = state.events.filter(ev => ev.id !== existingId);
+      saveLocalRoomCache(state.roomId);
       renderCalendar();
       renderEventsList();
-      closeCategoryLabelsModal();
-
       if (isFirebaseReady && db) {
-        try {
-          const metaRef = doc(db, `${getRoomBasePath(state.roomId)}/rooms`, state.roomId);
-          await setDoc(metaRef, { customCategoryLabels: newLabels, updatedAt: Date.now() }, { merge: true });
-        } catch (err) {
-          console.error('saveCategoryLabels firestore error:', err);
-        }
+        try { await deleteDoc(doc(db, `${basePath}/events`, existingId)); } catch (err) {}
       }
-      showToast('色分けラベルをグループに保存しました');
+      closeEventModal();
+      showToast('予定を削除しました', 'info');
     };
 
     // ==========================================
-    // 8. グループ作成・切替・存在確認・プロフィール・確認ダイアログ
+    // 8. グループ作成・切替・復元・プロフィール・色ラベル編集
     // ==========================================
-    window.openCreateGroupModal = function(isInitialForced = false) {
-      const modal = document.getElementById('create-group-modal');
+    window.openCreateGroupModal = function(isForcedInitial = false) {
+      document.getElementById('create-group-name').value = '';
+      document.getElementById('create-group-id').value = generateRandomGroupId();
+      document.getElementById('create-group-user-name').value = state.profile.name !== 'ゲスト' ? state.profile.name : '';
+      document.getElementById('create-group-user-role').value = state.profile.role || '';
+
       const closeBtn = document.getElementById('btn-close-create-group');
       const cancelBtn = document.getElementById('btn-cancel-create-group');
+      const hideCancel = isForcedInitial && !state.roomId;
+      if (closeBtn) closeBtn.classList.toggle('hidden', hideCancel);
+      if (cancelBtn) cancelBtn.classList.toggle('hidden', hideCancel);
 
-      document.getElementById('create-group-id').value = generateRandomGroupId();
-      const savedName = localStorage.getItem('teamsync_last_username');
-      if (savedName && !document.getElementById('create-group-user-name').value) {
-        document.getElementById('create-group-user-name').value = savedName;
-      }
-
-      const hideClose = isInitialForced && !state.roomId;
-      if (closeBtn) closeBtn.classList.toggle('hidden', hideClose);
-      if (cancelBtn) cancelBtn.classList.toggle('hidden', hideClose);
-
+      const modal = document.getElementById('create-group-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     };
@@ -3359,31 +3054,18 @@
       const shouldCopy = document.getElementById('create-group-copy-link').checked;
 
       if (!groupName || !groupId || !userName) return;
-      if (groupId === 'team-alpha') {
-        showToast('そのIDは使用できません。別のIDを指定してください', 'error');
-        return;
-      }
 
       state.roomName = groupName;
       state.hostUid = getEffectiveAccountId();
-      state.profile = {
-        name: userName,
-        role: userRole,
-        color: 'indigo'
-      };
-      state.members = [];
-      state.tasks = [];
-      state.events = [];
+      state.profile = { name: userName, role: userRole, color: state.profile.color || 'indigo' };
+      saveRoomProfileLocal(groupId, state.profile);
+      updateProfileUI();
 
-      state.roomId = groupId;
-      saveRoomProfileLocal();
       closeCreateGroupModal();
-
       await verifyAndEnterRoom(groupId, { isNewlyCreated: true });
 
       if (shouldCopy) {
-        const baseUrl = window.location.href.split('#')[0];
-        const shareText = `【TeamSync】グループ「${groupName}」に招待されました！\nグループID: ${groupId}\n参加URL: ${baseUrl}#room=${encodeURIComponent(groupId)}`;
+        const shareText = buildInviteShareText(groupId, groupName);
         copyTextToClipboard(shareText);
         showToast(`グループ「${groupName}」を作成し、招待リンクをコピーしました！`);
       } else {
@@ -3393,6 +3075,7 @@
 
     window.openRoomModal = function() {
       renderRecentGroupsList();
+      document.getElementById('input-room-id').value = '';
       const modal = document.getElementById('room-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -3409,8 +3092,7 @@
         showToast('先にグループを作成または選択してください', 'info');
         return;
       }
-      const baseUrl = window.location.href.split('#')[0];
-      const shareText = `【TeamSync】グループ「${state.roomName || state.roomId}」に招待されました！\nグループID: ${state.roomId}\n参加URL: ${baseUrl}#room=${encodeURIComponent(state.roomId)}`;
+      const shareText = buildInviteShareText(state.roomId, state.roomName);
       copyTextToClipboard(shareText);
       showToast('招待リンクをコピーしました');
     };
@@ -3428,44 +3110,39 @@
       listEl.innerHTML = state.recentGroups.map(g => {
         const isCurrent = g.id === state.roomId;
         return `
-          <button type="button" onclick="switchToHistoryGroup('${escapeHtml(g.id)}', '${escapeHtml(g.name || g.id)}')" class="w-full flex items-center justify-between px-3 py-2 rounded-xl border text-left transition ${isCurrent ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-500/15' : 'border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800'}">
+          <button type="button" onclick="selectRecentGroup('${escapeHtml(g.id)}')" class="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl border text-left transition ${isCurrent ? 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-300 dark:border-indigo-500/40' : 'bg-slate-50 dark:bg-zinc-800/70 border-slate-200/80 dark:border-zinc-700 hover:border-indigo-300'}">
             <div class="min-w-0">
               <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${escapeHtml(g.name || g.id)}</div>
-              <div class="text-[10px] font-mono text-slate-400">ID: ${escapeHtml(g.id)}</div>
+              <div class="font-mono text-[10px] text-slate-400 truncate">${escapeHtml(g.id)}</div>
             </div>
-            ${isCurrent ? '<span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 shrink-0">入室中</span>' : '<i class="fa-solid fa-arrow-right-to-bracket text-xs text-slate-400 shrink-0"></i>'}
+            ${isCurrent ? '<span class="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-bold shrink-0">現在表示中</span>' : '<i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>'}
           </button>
         `;
       }).join('');
     }
 
-    window.switchToHistoryGroup = async function(targetId, targetName) {
+    window.selectRecentGroup = async function(groupId) {
       closeRoomModal();
-      state.roomName = targetName;
-      const ok = await verifyAndEnterRoom(targetId);
-      if (ok) {
-        showToast(`グループ「${targetName || targetId}」に切り替えました`);
-      }
+      await verifyAndEnterRoom(groupId);
     };
 
     window.applyRoomId = async function() {
       const input = document.getElementById('input-room-id');
-      const targetId = (input?.value || '').trim();
-      if (!targetId) {
-        showToast('グループIDを入力してください', 'info');
+      const val = (input?.value || '').trim();
+      if (!val) {
+        showToast('グループIDを入力してください', 'error');
         return;
       }
       closeRoomModal();
-      const ok = await verifyAndEnterRoom(targetId);
-      if (ok) {
-        input.value = '';
-        showToast(`グループ（${targetId}）に入室しました`);
-      }
+      await verifyAndEnterRoom(val);
     };
 
-    function showGroupNotFoundModal(notFoundId) {
+    function showGroupNotFoundModal(notFoundId, knownName = '') {
       const textEl = document.getElementById('not-found-group-id-text');
-      if (textEl) textEl.textContent = notFoundId;
+      if (textEl) {
+        textEl.textContent = notFoundId;
+        textEl.dataset.knownName = knownName || '';
+      }
       const modal = document.getElementById('group-not-found-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -3480,30 +3157,25 @@
     window.retryRoomIdInput = function() {
       closeGroupNotFoundModal();
       openRoomModal();
-      setTimeout(() => {
-        const input = document.getElementById('input-room-id');
-        if (input) {
-          input.focus();
-          input.select();
-        }
-      }, 100);
     };
 
     window.retryCreateGroupFromNotFound = function() {
       closeGroupNotFoundModal();
-      openCreateGroupModal(!state.roomId);
+      openCreateGroupModal();
     };
 
     window.restoreGroupFromNotFound = async function() {
-      const targetId = (document.getElementById('not-found-group-id-text')?.textContent || '').trim();
+      const textEl = document.getElementById('not-found-group-id-text');
+      const targetId = (textEl?.textContent || '').trim();
+      const knownName = (textEl?.dataset?.knownName || '').trim();
       closeGroupNotFoundModal();
       if (!targetId) return;
       const historyItem = state.recentGroups.find(g => g.id === targetId);
-      state.roomName = (historyItem && historyItem.name) ? historyItem.name : targetId;
+      state.roomName = knownName || (historyItem && historyItem.name) || targetId;
       state.hostUid = getEffectiveAccountId();
       const ok = await verifyAndEnterRoom(targetId, { isNewlyCreated: true });
       if (ok) {
-        showToast(`グループ（${targetId}）を復元しました`);
+        showToast(`グループ「${state.roomName}」（${targetId}）を復元しました`);
       }
     };
 
@@ -3512,35 +3184,35 @@
     // ==========================================
     window.exportGroupBackupFile = function() {
       if (!state.roomId) {
-        showToast('バックアップするグループに先に入室してください', 'info');
+        showToast('バックアップするグループが選択されていません', 'error');
         return;
       }
       const backupPayload = {
         app: 'TeamSync',
         version: 1,
         exportedAt: new Date().toISOString(),
-        room: {
-          id: state.roomId,
-          name: state.roomName || state.roomId,
+        group: {
+          roomId: state.roomId,
+          roomName: state.roomName || state.roomId,
           customCategoryLabels: state.customCategoryLabels || {}
         },
-        tasks: state.tasks.map(({ id, ...rest }) => rest),
-        events: state.events.map(({ id, ...rest }) => rest)
+        tasks: state.tasks || [],
+        events: state.events || [],
+        members: state.members || []
       };
-
       const jsonStr = JSON.stringify(backupPayload, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const safeName = (state.roomName || state.roomId).replace(/[\\/:*?"<>|]/g, '_');
-      const dateTag = getTodayStr();
       const a = document.createElement('a');
+      const dateTag = formatDateStr(new Date());
+      const safeName = (state.roomName || state.roomId).replace(/[\\/:*?"<>|]/g, '_');
       a.href = url;
       a.download = `TeamSync_${safeName}_${dateTag}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast(`バックアップファイル（${a.download}）を保存しました！`);
+      showToast('バックアップファイルを保存しました！');
     };
 
     window.triggerImportGroupBackupFile = function() {
@@ -3551,84 +3223,60 @@
       }
     };
 
-    window.handleImportGroupBackupFile = async function(event) {
-      const file = event.target?.files?.[0];
+    window.handleImportGroupBackupFile = async function(e) {
+      const file = e.target?.files?.[0];
       if (!file) return;
-
       try {
         const text = await file.text();
         const data = JSON.parse(text);
-        if (!data || data.app !== 'TeamSync' || !data.room || !data.room.id) {
+        if (!data || data.app !== 'TeamSync' || !data.group || !data.group.roomId) {
           showToast('有効なTeamSyncバックアップファイルではありません', 'error');
           return;
         }
+        const targetRoomId = data.group.roomId;
+        const targetRoomName = data.group.roomName || targetRoomId;
+        state.roomName = targetRoomName;
+        state.customCategoryLabels = data.group.customCategoryLabels || {};
+        saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
 
-        const targetRoomId = String(data.room.id).trim();
-        const targetRoomName = String(data.room.name || targetRoomId).trim();
-        const importedTasks = Array.isArray(data.tasks) ? data.tasks : [];
-        const importedEvents = Array.isArray(data.events) ? data.events : [];
-        const importedLabels = (data.room.customCategoryLabels && typeof data.room.customCategoryLabels === 'object')
-          ? data.room.customCategoryLabels
-          : {};
+        const importedTasks = Array.isArray(data.tasks) ? data.tasks.map(t => ({ ...t, roomId: targetRoomId })) : [];
+        const importedEvents = Array.isArray(data.events) ? data.events.map(ev => ({ ...ev, roomId: targetRoomId })) : [];
+        state.tasks = importedTasks;
+        state.events = importedEvents;
+        saveLocalRoomCache(targetRoomId);
 
         closeRoomModal();
         closeMembersManageModal();
-        closeCreateGroupModal();
-
-        state.roomName = targetRoomName;
-        state.hostUid = getEffectiveAccountId();
-        state.customCategoryLabels = importedLabels;
-
-        const entered = await verifyAndEnterRoom(targetRoomId, { isNewlyCreated: true });
-        if (!entered) return;
+        await verifyAndEnterRoom(targetRoomId, { isNewlyCreated: true });
 
         if (isFirebaseReady && db) {
-          const basePath = getRoomBasePath(targetRoomId);
-          await setDoc(doc(db, `${basePath}/rooms`, targetRoomId), {
-            name: targetRoomName,
-            customCategoryLabels: importedLabels,
-            updatedAt: Date.now()
-          }, { merge: true });
-
-          const tasksCol = collection(db, `${basePath}/tasks`);
           for (const t of importedTasks) {
-            await addDoc(tasksCol, {
-              ...t,
-              roomId: targetRoomId,
-              updatedAt: t.updatedAt || Date.now()
-            });
+            const tid = t.id || ('task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
+            await setDoc(doc(db, `${basePath}/tasks`, tid), { ...t, id: tid, roomId: targetRoomId }, { merge: true });
           }
-
-          const eventsCol = collection(db, `${basePath}/events`);
           for (const ev of importedEvents) {
-            await addDoc(eventsCol, {
-              ...ev,
-              roomId: targetRoomId,
-              updatedAt: ev.updatedAt || Date.now()
-            });
+            const eid = ev.id || ('ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
+            await setDoc(doc(db, `${basePath}/events`, eid), { ...ev, id: eid, roomId: targetRoomId }, { merge: true });
+          }
+          if (Object.keys(state.customCategoryLabels).length > 0) {
+            await updateDoc(doc(db, `${basePath}/rooms`, targetRoomId), { customCategoryLabels: state.customCategoryLabels });
           }
         }
-
-        showToast(`「${targetRoomName}」を復元しました（仕事 ${importedTasks.length}件・予定 ${importedEvents.length}件）`);
+        renderAll();
+        showToast(`グループ「${targetRoomName}」と全データを復元しました！`);
       } catch (err) {
-        console.error('handleImportGroupBackupFile error:', err);
+        console.error('Import backup error:', err);
         showToast('バックアップファイルの読み込みに失敗しました', 'error');
       }
     };
 
+    // プロフィールモーダル
     window.openProfileModal = function() {
-      if (!state.roomId) {
-        showToast('先にグループを作成または選択してください', 'info');
-        return;
-      }
-      document.getElementById('input-profile-name').value = state.profile.name === 'ゲスト' ? '' : state.profile.name;
+      document.getElementById('input-profile-name').value = state.profile.name !== 'ゲスト' ? state.profile.name : '';
       document.getElementById('input-profile-role').value = state.profile.role || '';
       state.selectedAvatarColor = state.profile.color || 'indigo';
+      document.getElementById('profile-account-uid').textContent = getEffectiveAccountId();
       renderAvatarColorPicker();
-      const uidEl = document.getElementById('profile-account-uid');
-      if (uidEl) uidEl.textContent = getEffectiveAccountId() || '未取得';
-      const importInput = document.getElementById('input-import-account-id');
-      if (importInput) importInput.value = '';
       const modal = document.getElementById('profile-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -3641,15 +3289,11 @@
     };
 
     function renderAvatarColorPicker() {
-      const picker = document.getElementById('avatar-color-picker');
-      if (!picker) return;
-      picker.innerHTML = AVATAR_COLORS.map(c => {
+      const wrap = document.getElementById('avatar-color-picker');
+      if (!wrap) return;
+      wrap.innerHTML = AVATAR_COLORS.map(c => {
         const selected = state.selectedAvatarColor === c.id;
-        return `
-          <button type="button" onclick="selectAvatarColor('${c.id}')" class="w-8 h-8 rounded-xl ${c.bg} text-white flex items-center justify-center text-xs transition ${selected ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ' + c.ring + ' scale-110' : 'opacity-80 hover:opacity-100'}">
-            ${selected ? '<i class="fa-solid fa-check"></i>' : ''}
-          </button>
-        `;
+        return `<button type="button" onclick="selectAvatarColor('${c.id}')" class="w-7 h-7 rounded-full ${c.bg} transition ${selected ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-900 ' + c.ring + ' scale-110' : 'opacity-80 hover:opacity-100'}"></button>`;
       }).join('');
     }
 
@@ -3658,135 +3302,112 @@
       renderAvatarColorPicker();
     };
 
+    window.saveProfile = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('input-profile-name').value.trim() || 'ゲスト';
+      const role = document.getElementById('input-profile-role').value.trim();
+      state.profile = { name, role, color: state.selectedAvatarColor || 'indigo' };
+      saveRoomProfileLocal(state.roomId, state.profile);
+      updateProfileUI();
+      if (state.roomId) {
+        await syncMyRoomMemberDoc(state.roomId);
+      }
+      closeProfileModal();
+      showToast('プロフィールを保存しました');
+    };
+
     window.copyAccountUid = function() {
-      const uid = getEffectiveAccountId();
-      if (!uid) return;
-      copyTextToClipboard(uid);
+      copyTextToClipboard(getEffectiveAccountId());
       showToast('固定アカウントIDをコピーしました');
     };
 
     window.importAccountUid = async function() {
-      const input = document.getElementById('input-import-account-id');
-      const newUid = (input?.value || '').trim();
-      if (!newUid || !/^[a-zA-Z0-9_-]+$/.test(newUid)) {
-        showToast('有効なアカウントIDを入力してください', 'error');
-        return;
-      }
-
-      const oldUid = getEffectiveAccountId();
-      if (oldUid && oldUid !== newUid && isFirebaseReady && db && state.roomId) {
-        try {
-          await deleteDoc(doc(db, `${getRoomBasePath(state.roomId)}/members`, `${state.roomId}_${oldUid}`));
-        } catch (e) {}
-      }
-
-      state.accountId = newUid;
-      try {
-        localStorage.setItem('teamsync_persistent_account_id', newUid);
-      } catch (e) {}
-
-      const uidEl = document.getElementById('profile-account-uid');
-      if (uidEl) uidEl.textContent = newUid;
-      input.value = '';
+      const val = (document.getElementById('input-import-account-id')?.value || '').trim();
+      if (!val) return;
+      state.accountId = val;
+      localStorage.setItem('teamsync_account_id', val);
+      document.getElementById('profile-account-uid').textContent = val;
       updateUrlHashState();
+      if (state.roomId) {
+        await syncMyRoomMemberDoc(state.roomId);
+      }
+      showToast('アカウントIDを引き継ぎました');
+    };
 
-      let targetRoomId = state.roomId;
-      if (isFirebaseReady && db) {
-        try {
-          const basePath = getRoomBasePath('');
-          const qMyMembers = query(collection(db, `${basePath}/members`), where('uid', '==', newUid));
-          const memberSnaps = await getDocs(qMyMembers);
-          const foundRoomIds = [];
-          memberSnaps.forEach(d => {
-            const mData = d.data();
-            if (mData && mData.roomId) {
-              foundRoomIds.push(mData.roomId);
-              if (mData.name && mData.name !== 'ゲスト') {
-                localStorage.setItem(`teamsync_profile_${mData.roomId}`, JSON.stringify({
-                  name: mData.name,
-                  role: mData.role || '',
-                  color: mData.color || 'indigo'
-                }));
-                localStorage.setItem('teamsync_last_username', mData.name);
-              }
-            }
-          });
+    // 色分けカテゴリーラベル編集モーダル
+    window.openCategoryLabelsModal = function() {
+      const wrap = document.getElementById('category-labels-inputs');
+      if (wrap) {
+        wrap.innerHTML = EVENT_COLORS.map(c => {
+          const meta = getCategoryMeta(c.key);
+          return `
+            <div class="flex items-center gap-2.5">
+              <span class="w-4 h-4 rounded-full ${c.dot} shrink-0"></span>
+              <input type="text" data-cat-key="${c.key}" value="${escapeHtml(meta.label)}" placeholder="${escapeHtml(c.defaultLabel)}" class="flex-1 text-xs rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-1.5 focus:outline-none">
+            </div>
+          `;
+        }).join('');
+      }
+      const modal = document.getElementById('category-labels-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
 
-          for (const rId of foundRoomIds) {
-            const rSnap = await getDoc(doc(db, `${basePath}/rooms`, rId));
-            const rName = rSnap.exists() ? (rSnap.data().name || rId) : rId;
-            saveGroupToHistory(rId, rName);
-          }
+    window.closeCategoryLabelsModal = function() {
+      const modal = document.getElementById('category-labels-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
 
-          if (!targetRoomId && foundRoomIds.length > 0) {
-            targetRoomId = foundRoomIds[0];
-          }
-        } catch (e) {
-          console.error('importAccountUid lookup error:', e);
+    window.resetCategoryLabelsToDefault = function() {
+      const inputs = document.querySelectorAll('#category-labels-inputs input[data-cat-key]');
+      inputs.forEach(inp => {
+        const key = inp.dataset.catKey;
+        const found = EVENT_COLORS.find(c => c.key === key);
+        if (found) inp.value = found.defaultLabel;
+      });
+    };
+
+    window.saveCategoryLabels = async function(e) {
+      e.preventDefault();
+      const inputs = document.querySelectorAll('#category-labels-inputs input[data-cat-key]');
+      const nextLabels = {};
+      inputs.forEach(inp => {
+        const key = inp.dataset.catKey;
+        const val = inp.value.trim();
+        if (val) nextLabels[key] = val;
+      });
+      state.customCategoryLabels = nextLabels;
+      if (state.roomId) {
+        saveRoomCategoryLabelsLocal(state.roomId, nextLabels);
+        if (isFirebaseReady && db) {
+          try {
+            await setDoc(doc(db, `${basePath}/rooms`, state.roomId), { customCategoryLabels: nextLabels }, { merge: true });
+          } catch (err) {}
         }
       }
-
-      closeProfileModal();
-      closeCreateGroupModal();
-
-      if (targetRoomId) {
-        await verifyAndEnterRoom(targetRoomId);
-        updateProfileUI();
-        renderActiveMembersBar();
-      }
-      showToast('アカウント情報と権限を引き継ぎました！');
+      renderCalendarLegend();
+      renderEventCategoryControls();
+      renderCalendar();
+      renderEventsList();
+      closeCategoryLabelsModal();
+      showToast('色分けカテゴリーラベルを保存しました');
     };
 
-    window.saveProfile = async function(e) {
-      e.preventDefault();
-      const newName = document.getElementById('input-profile-name').value.trim();
-      const newRole = document.getElementById('input-profile-role').value.trim();
-      if (!newName) return;
-
-      state.profile = {
-        name: newName,
-        role: newRole,
-        color: state.selectedAvatarColor || 'indigo'
-      };
-      saveRoomProfileLocal();
-      updateProfileUI();
-      await syncMyRoomMemberDoc(state.roomId);
-      closeProfileModal();
-      showToast('プロフィールを更新しました');
-    };
-
-    let confirmCallback = null;
-    function openConfirmModal(message, onExecute, options = {}) {
-      const titleEl = document.getElementById('confirm-title');
-      const msgEl = document.getElementById('confirm-message');
+    // 汎用確認ダイアログ
+    let pendingConfirmCallback = null;
+    function openConfirmDialog({ title, message, confirmLabel = '削除する', onConfirm }) {
+      document.getElementById('confirm-title').textContent = title || '確認';
+      document.getElementById('confirm-message').textContent = message || '';
       const execBtn = document.getElementById('btn-confirm-execute');
-      const headerEl = document.getElementById('confirm-header');
-      const iconWrap = document.getElementById('confirm-icon-wrap');
-      const iconEl = document.getElementById('confirm-icon');
-
-      titleEl.textContent = options.title || '削除の確認';
-      msgEl.textContent = message;
-      execBtn.textContent = options.confirmText || '削除する';
-
-      if (options.variant === 'host') {
-        headerEl.className = 'flex items-center gap-3 text-amber-600 dark:text-amber-400 mb-2';
-        iconWrap.className = 'w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center';
-        iconEl.className = 'fa-solid fa-crown';
-        execBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white';
-      } else {
-        headerEl.className = 'flex items-center gap-3 text-rose-600 dark:text-rose-400 mb-2';
-        iconWrap.className = 'w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center';
-        iconEl.className = 'fa-solid fa-triangle-exclamation';
-        execBtn.className = 'px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white';
-      }
-
-      confirmCallback = onExecute;
+      execBtn.textContent = confirmLabel;
+      pendingConfirmCallback = onConfirm;
       execBtn.onclick = async () => {
-        const fn = confirmCallback;
         closeConfirmModal();
-        if (fn) await fn();
+        if (typeof pendingConfirmCallback === 'function') {
+          await pendingConfirmCallback();
+        }
       };
-
       const modal = document.getElementById('confirm-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
@@ -3796,177 +3417,141 @@
       const modal = document.getElementById('confirm-modal');
       modal.classList.add('hidden');
       modal.classList.remove('flex');
-      confirmCallback = null;
     };
 
     // ==========================================
-    // 9. アプリ起動 & 画面幅フィット制御 & 自動アップデート検知 & スプラッシュ
+    // 9. レスポンシブタブ・モバイルスワイプナビゲーション
     // ==========================================
-    function hideSplashScreenAfterAnimation() {
-      const splash = document.getElementById('app-splash-screen');
-      if (!splash) return;
-      setTimeout(() => {
-        splash.classList.add('splash-hide');
-        setTimeout(() => splash.remove(), 500);
-      }, 1350);
-    }
+    window.switchMainTab = function(tab) {
+      state.mainTab = tab;
+      const tabBoth = document.getElementById('tab-both');
+      const tabTasks = document.getElementById('tab-tasks');
+      const tabCal = document.getElementById('tab-calendar');
+      const secTasks = document.getElementById('section-tasks');
+      const secCal = document.getElementById('section-calendar');
+      const grid = document.getElementById('workspace-grid');
 
-    let initialHtmlSnapshot = null;
-    let isCheckingAppUpdate = false;
+      const activeStyle = 'flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all bg-white dark:bg-zinc-700 text-indigo-600 dark:text-indigo-300 shadow-xs';
+      const inactiveStyle = 'flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white';
 
-    async function checkAndApplyLatestAppVersion() {
-      if (isCheckingAppUpdate) return;
-      if (!window.location.protocol.startsWith('http')) return;
-      isCheckingAppUpdate = true;
-      try {
-        const baseUrl = window.location.href.split('#')[0].split('?')[0];
-        const res = await fetch(`${baseUrl}?_ts=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        });
-        if (!res.ok) return;
-        const latestHtml = await res.text();
-        if (!latestHtml || !latestHtml.includes('TeamSync')) return;
+      const isDesktop = window.innerWidth >= 1024;
+      if (!isDesktop && tab === 'both') {
+        tab = 'tasks';
+        state.mainTab = 'tasks';
+      }
 
-        if (initialHtmlSnapshot === null) {
-          initialHtmlSnapshot = latestHtml;
-        } else if (initialHtmlSnapshot !== latestHtml) {
-          showToast('新しいバージョンを検知しました。最新版へ更新します...', 'info');
-          setTimeout(() => {
-            window.location.reload();
-          }, 700);
+      if (tabBoth) tabBoth.className = (tab === 'both' ? 'hidden lg:flex flex-1 ' + activeStyle.replace('flex ', '') : 'hidden lg:flex flex-1 ' + inactiveStyle.replace('flex ', ''));
+      if (tabTasks) tabTasks.className = 'flex-1 ' + (tab === 'tasks' ? activeStyle : inactiveStyle);
+      if (tabCal) tabCal.className = 'flex-1 ' + (tab === 'calendar' ? activeStyle : inactiveStyle);
+
+      if (isDesktop) {
+        if (grid) {
+          grid.classList.remove('swipe-animating');
+          grid.style.transform = '';
         }
-      } catch (e) {
-      } finally {
-        isCheckingAppUpdate = false;
+        if (tab === 'both') {
+          secTasks.classList.remove('hidden', 'lg:col-span-12');
+          secTasks.classList.add('lg:col-span-7');
+          secCal.classList.remove('hidden', 'lg:col-span-12');
+          secCal.classList.add('lg:col-span-5');
+        } else if (tab === 'tasks') {
+          secTasks.classList.remove('hidden', 'lg:col-span-7');
+          secTasks.classList.add('lg:col-span-12');
+          secCal.classList.add('hidden');
+        } else if (tab === 'calendar') {
+          secCal.classList.remove('hidden', 'lg:col-span-5');
+          secCal.classList.add('lg:col-span-12');
+          secTasks.classList.add('hidden');
+        }
+      } else {
+        secTasks.classList.remove('hidden');
+        secCal.classList.remove('hidden');
+        if (grid) {
+          grid.classList.add('swipe-animating');
+          grid.style.transform = tab === 'calendar' ? 'translateX(-50%)' : 'translateX(0%)';
+        }
       }
-    }
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        checkAndApplyLatestAppVersion();
-      }
-    });
+    };
 
     function syncResponsiveLayout(isInitial = false) {
       const isDesktop = window.innerWidth >= 1024;
-      if (isDesktop) {
-        if (isInitial || state.mainTab !== 'both') {
-          switchMainTab('both', false);
-        }
-      } else {
-        if (isInitial || state.mainTab === 'both') {
-          switchMainTab('tasks', false);
-        } else {
-          switchMainTab(state.mainTab, false);
-        }
+      if (isInitial) {
+        state.mainTab = isDesktop ? 'both' : 'tasks';
       }
+      switchMainTab(state.mainTab);
     }
-
-    window.addEventListener('resize', () => {
-      syncResponsiveLayout(false);
-    });
 
     function initMobileSwipeNavigation() {
       const viewport = document.getElementById('workspace-grid-viewport');
       const grid = document.getElementById('workspace-grid');
       if (!viewport || !grid) return;
 
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let currentDeltaX = 0;
-      let swipeMode = null;
+      let startX = 0;
+      let startY = 0;
+      let isHorizontalSwipe = null;
 
       viewport.addEventListener('touchstart', (e) => {
-        if (window.innerWidth >= 1024 || e.touches.length !== 1) {
-          swipeMode = 'vertical';
-          return;
-        }
-        const target = e.target;
-        const hasOpenModal = Array.from(document.querySelectorAll('.fixed.inset-0')).some(
-          el => !el.classList.contains('hidden') && el.id !== 'app-splash-screen'
-        );
-        if (hasOpenModal || (target && target.closest('input[type="range"], input, textarea, select'))) {
-          swipeMode = 'vertical';
-          return;
-        }
-
-        swipeMode = null;
-        currentDeltaX = 0;
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
+        if (window.innerWidth >= 1024 || e.touches.length !== 1) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isHorizontalSwipe = null;
         grid.classList.remove('swipe-animating');
       }, { passive: true });
 
       viewport.addEventListener('touchmove', (e) => {
-        if (swipeMode === 'vertical' || window.innerWidth >= 1024 || !e.touches.length) return;
-
-        const dx = e.touches[0].clientX - touchStartX;
-        const dy = e.touches[0].clientY - touchStartY;
-        const absX = Math.abs(dx);
-        const absY = Math.abs(dy);
-
-        if (swipeMode === null) {
-          if (absX < 12 && absY < 12) return;
-          if (absX > absY * 1.8 && absX >= 14) {
-            swipeMode = 'horizontal';
-          } else {
-            swipeMode = 'vertical';
-            return;
-          }
+        if (window.innerWidth >= 1024 || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if (isHorizontalSwipe === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+          isHorizontalSwipe = Math.abs(dx) > Math.abs(dy);
         }
-
-        if (swipeMode === 'horizontal') {
-          if (e.cancelable) {
-            e.preventDefault();
-          }
-          currentDeltaX = dx;
-          const viewportWidth = viewport.offsetWidth || window.innerWidth;
-          const baseOffsetPx = state.mainTab === 'calendar' ? -viewportWidth : 0;
-
-          let effectiveDx = dx;
-          if ((state.mainTab === 'tasks' && dx > 0) || (state.mainTab === 'calendar' && dx < 0)) {
-            effectiveDx = dx * 0.25;
-          }
-
-          grid.style.transform = `translate3d(${baseOffsetPx + effectiveDx}px, 0, 0)`;
+        if (isHorizontalSwipe) {
+          const basePercent = state.mainTab === 'calendar' ? -50 : 0;
+          const deltaPercent = (dx / viewport.offsetWidth) * 50;
+          const clamped = Math.max(-50, Math.min(0, basePercent + deltaPercent));
+          grid.style.transform = `translateX(${clamped}%)`;
         }
-      }, { passive: false });
+      }, { passive: true });
 
-      const finishSwipe = () => {
-        if (swipeMode !== 'horizontal' || window.innerWidth >= 1024) {
-          swipeMode = null;
-          return;
-        }
-        swipeMode = null;
-        const viewportWidth = viewport.offsetWidth || window.innerWidth;
-        const threshold = Math.min(75, viewportWidth * 0.2);
-
-        if (currentDeltaX < -threshold && state.mainTab === 'tasks') {
-          switchMainTab('calendar', true);
-        } else if (currentDeltaX > threshold && state.mainTab === 'calendar') {
-          switchMainTab('tasks', true);
+      viewport.addEventListener('touchend', (e) => {
+        if (window.innerWidth >= 1024 || !isHorizontalSwipe) return;
+        const endX = e.changedTouches[0].clientX;
+        const dx = endX - startX;
+        if (dx < -50 && state.mainTab === 'tasks') {
+          switchMainTab('calendar');
+        } else if (dx > 50 && state.mainTab === 'calendar') {
+          switchMainTab('tasks');
         } else {
-          switchMainTab(state.mainTab, true);
+          switchMainTab(state.mainTab);
         }
-        currentDeltaX = 0;
-      };
+      }, { passive: true });
 
-      viewport.addEventListener('touchend', finishSwipe, { passive: true });
-      viewport.addEventListener('touchcancel', finishSwipe, { passive: true });
+      window.addEventListener('resize', () => syncResponsiveLayout(false));
+    }
+
+    // ==========================================
+    // 10. URLハッシュ解析・起動シーケンス
+    // ==========================================
+    function parseRoomParamsFromHash(hashStr) {
+      const hash = hashStr || '';
+      const roomMatch = hash.match(/room=([^&]+)/);
+      if (!roomMatch || !roomMatch[1]) return null;
+      const decodedId = decodeURIComponent(roomMatch[1]).trim();
+      if (!decodedId || decodedId === 'team-alpha') return null;
+      const nameMatch = hash.match(/name=([^&]+)/);
+      const decodedName = (nameMatch && nameMatch[1]) ? decodeURIComponent(nameMatch[1]).trim() : '';
+      return { id: decodedId, name: decodedName };
     }
 
     function initRoomFromHash() {
-      const hash = window.location.hash || '';
-      const roomMatch = hash.match(/room=([^&]+)/);
-      if (roomMatch && roomMatch[1]) {
-        const decoded = decodeURIComponent(roomMatch[1]).trim();
-        if (decoded && decoded !== 'team-alpha') {
-          state.roomId = decoded;
-          isInvitedViaUrl = true;
-          invitedRoomIdFromUrl = decoded;
-          return;
-        }
+      const parsed = parseRoomParamsFromHash(window.location.hash);
+      if (parsed) {
+        state.roomId = parsed.id;
+        if (parsed.name) state.roomName = parsed.name;
+        isInvitedViaUrl = true;
+        invitedRoomIdFromUrl = parsed.id;
+        invitedRoomNameFromUrl = parsed.name;
+        return;
       }
       if (state.recentGroups.length > 0) {
         state.roomId = state.recentGroups[0].id;
@@ -3975,17 +3560,15 @@
     }
 
     window.addEventListener('hashchange', async () => {
-      const hash = window.location.hash || '';
-      const roomMatch = hash.match(/room=([^&]+)/);
-      if (roomMatch && roomMatch[1]) {
-        const decoded = decodeURIComponent(roomMatch[1]).trim();
-        if (decoded && decoded !== 'team-alpha' && decoded !== state.roomId) {
-          isInvitedViaUrl = true;
-          invitedRoomIdFromUrl = decoded;
-          closeCreateGroupModal();
-          closeRoomModal();
-          await verifyAndEnterRoom(decoded);
-        }
+      const parsed = parseRoomParamsFromHash(window.location.hash);
+      if (parsed && parsed.id !== state.roomId) {
+        isInvitedViaUrl = true;
+        invitedRoomIdFromUrl = parsed.id;
+        invitedRoomNameFromUrl = parsed.name;
+        if (parsed.name) state.roomName = parsed.name;
+        closeCreateGroupModal();
+        closeRoomModal();
+        await verifyAndEnterRoom(parsed.id);
       }
     });
 
@@ -3996,7 +3579,7 @@
     initRoomFromHash();
     if (state.roomId) {
       const initialHistoryHit = state.recentGroups.find(g => g.id === state.roomId);
-      if (initialHistoryHit && initialHistoryHit.name) {
+      if (!state.roomName && initialHistoryHit && initialHistoryHit.name) {
         state.roomName = initialHistoryHit.name;
       }
       if (!isInvitedViaUrl) {
@@ -4014,7 +3597,6 @@
     renderTasks();
     renderEventsList();
     initFirebase();
-    checkAndApplyLatestAppVersion();
 
     if (!state.roomId && !isInvitedViaUrl) {
       openCreateGroupModal(true);
