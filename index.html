@@ -1116,7 +1116,7 @@
     let invitedRoomIdFromUrl = '';
     let invitedRoomNameFromUrl = '';
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'teamsync-default';
+    const appId = 'teamsync-shared';
     const basePath = `artifacts/${appId}/public/data`;
 
     // ==========================================
@@ -1232,10 +1232,10 @@
     }
 
     function buildInviteShareText(roomId, roomName) {
-      const baseUrl = window.location.href.split('#')[0];
+      const cleanUrl = window.location.href.split('#')[0].split('?')[0];
       const displayTitle = roomName || roomId;
       const nameParam = (roomName && roomName !== roomId) ? `&name=${encodeURIComponent(roomName)}` : '';
-      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${baseUrl}#room=${encodeURIComponent(roomId)}${nameParam}`;
+      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${cleanUrl}?room=${encodeURIComponent(roomId)}${nameParam}#room=${encodeURIComponent(roomId)}${nameParam}`;
     }
 
     // ==========================================
@@ -1534,7 +1534,7 @@
               ? historyItem.name
               : '';
 
-          if (hasExistingRoomRecords || historyItem) {
+          if (hasExistingRoomRecords || historyItem || (isInvitedViaUrl && invitedRoomIdFromUrl === targetRoomId)) {
             const restoredName = knownName || targetRoomId;
             const newCode = generateHostRecoveryCode();
             state.roomName = restoredName;
@@ -1549,7 +1549,6 @@
               createdAt: Date.now(),
               updatedAt: Date.now()
             }, { merge: true });
-            showToast(`グループ「${restoredName}」に参加しました`, 'info');
           } else {
             if (knownName) {
               state.roomName = knownName;
@@ -3532,19 +3531,24 @@
     // ==========================================
     // 10. URLハッシュ解析・起動シーケンス
     // ==========================================
-    function parseRoomParamsFromHash(hashStr) {
-      const hash = hashStr || '';
-      const roomMatch = hash.match(/room=([^&]+)/);
-      if (!roomMatch || !roomMatch[1]) return null;
-      const decodedId = decodeURIComponent(roomMatch[1]).trim();
-      if (!decodedId || decodedId === 'team-alpha') return null;
-      const nameMatch = hash.match(/name=([^&]+)/);
-      const decodedName = (nameMatch && nameMatch[1]) ? decodeURIComponent(nameMatch[1]).trim() : '';
-      return { id: decodedId, name: decodedName };
+    function parseRoomParamsFromUrl(urlSearchStr, urlHashStr) {
+      const sources = [urlHashStr || '', urlSearchStr || ''];
+      for (const src of sources) {
+        const roomMatch = src.match(/[?#&]room=([^&]+)/) || src.match(/^room=([^&]+)/);
+        if (roomMatch && roomMatch[1]) {
+          const decodedId = decodeURIComponent(roomMatch[1]).trim();
+          if (decodedId && decodedId !== 'team-alpha') {
+            const nameMatch = src.match(/[?#&]name=([^&]+)/) || src.match(/^name=([^&]+)/);
+            const decodedName = (nameMatch && nameMatch[1]) ? decodeURIComponent(nameMatch[1]).trim() : '';
+            return { id: decodedId, name: decodedName };
+          }
+        }
+      }
+      return null;
     }
 
     function initRoomFromHash() {
-      const parsed = parseRoomParamsFromHash(window.location.hash);
+      const parsed = parseRoomParamsFromUrl(window.location.search, window.location.hash);
       if (parsed) {
         state.roomId = parsed.id;
         if (parsed.name) state.roomName = parsed.name;
@@ -3560,7 +3564,7 @@
     }
 
     window.addEventListener('hashchange', async () => {
-      const parsed = parseRoomParamsFromHash(window.location.hash);
+      const parsed = parseRoomParamsFromUrl(window.location.search, window.location.hash);
       if (parsed && parsed.id !== state.roomId) {
         isInvitedViaUrl = true;
         invitedRoomIdFromUrl = parsed.id;
