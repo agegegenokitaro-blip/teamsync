@@ -2296,7 +2296,8 @@
 
       const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
       const memberFilter = document.getElementById('filter-member')?.value || 'ALL';
-      const searchFilter = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+      const rawSearch = (document.getElementById('filter-search')?.value || '').trim();
+      const searchFilter = rawSearch.toLowerCase();
 
       const filtered = state.tasks.filter(t => {
         if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
@@ -2305,20 +2306,41 @@
           if (t.member !== memberFilter && !collabs.includes(memberFilter)) return false;
         }
         if (searchFilter) {
-          const hay = `${t.title || ''} ${t.desc || ''} ${t.tag || ''} ${t.member || ''}`.toLowerCase();
-          if (!hay.includes(searchFilter)) return false;
+          const titleText = (t.title || '').toLowerCase();
+          const commentsList = Array.isArray(t.comments) ? t.comments : [];
+          const commentsText = commentsList
+            .map(c => `${c.text || ''} ${c.author || ''}`)
+            .join(' ')
+            .toLowerCase();
+          const tagText = (t.tag || '').toLowerCase();
+
+          const isMatch =
+            titleText.includes(searchFilter) ||
+            commentsText.includes(searchFilter) ||
+            tagText.includes(searchFilter);
+
+          if (!isMatch) return false;
         }
         return true;
       });
 
       if (filtered.length === 0) {
+        if (rawSearch.length === 1) {
+          container.innerHTML = `
+            <div class="text-center py-10 px-4">
+              <p class="text-xs font-medium text-slate-400 dark:text-zinc-500">仕事が存在しません</p>
+            </div>
+          `;
+          return;
+        }
+
         container.innerHTML = `
           <div class="text-center py-10 px-4">
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto mb-3 text-lg">
               <i class="fa-solid fa-clipboard-list"></i>
             </div>
-            <p class="text-xs font-bold text-slate-700 dark:text-zinc-200">表示する仕事がありません</p>
-            <p class="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">右上の「仕事報告」ボタンから現在の作業を共有できます</p>
+            <p class="text-xs font-bold text-slate-700 dark:text-zinc-200">${rawSearch ? '一致する仕事が存在しません' : '表示する仕事がありません'}</p>
+            <p class="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">${rawSearch ? '別のキーワードでお試しください' : '右上の「仕事報告」ボタンから現在の作業を共有できます'}</p>
           </div>
         `;
         return;
