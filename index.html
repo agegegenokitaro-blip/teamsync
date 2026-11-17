@@ -728,20 +728,20 @@
         <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/80 dark:border-indigo-500/30 flex flex-col gap-2">
           <div class="flex items-center justify-between gap-2">
             <span class="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-              <i class="fa-solid fa-key text-indigo-600 dark:text-indigo-400"></i>
-              <span>招待コードで確実に共有・参加</span>
+              <i class="fa-solid fa-arrows-rotate text-indigo-600 dark:text-indigo-400"></i>
+              <span>招待・最新データ同期コード</span>
             </span>
             <button type="button" onclick="copyGroupInviteCode()" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold transition flex items-center gap-1 shrink-0 shadow-2xs">
               <i class="fa-regular fa-copy"></i>
-              <span>招待コードをコピー</span>
+              <span>最新コードをコピー</span>
             </button>
           </div>
           <p class="text-[11px] text-indigo-800/90 dark:text-indigo-300/90 leading-relaxed">
-            別端末や別ブラウザでURLから入れない場合は、ホストがコピーした招待コード（<code class="font-mono">TSYNC:...</code>）を下に貼り付けてください。
+            新規招待や、<strong>別端末で追加した仕事・予定を他のメンバーへ反映したいとき</strong>は「最新コードをコピー」して送り、受け取った側が下に貼り付けて同期してください。
           </p>
           <div class="flex gap-2">
-            <input type="text" id="input-invite-code" placeholder="TSYNC:... の招待コードを貼り付け" class="flex-1 text-xs font-mono rounded-xl border border-indigo-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2 focus:outline-none">
-            <button type="button" onclick="joinGroupByInviteCode()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shrink-0">コード参加</button>
+            <input type="text" id="input-invite-code" placeholder="TSYNC:... の同期コードを貼り付け" class="flex-1 text-xs font-mono rounded-xl border border-indigo-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-900 dark:text-white px-3 py-2 focus:outline-none">
+            <button type="button" onclick="joinGroupByInviteCode()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shrink-0">同期・参加</button>
           </div>
         </div>
         <!-- データのバックアップ保存・復元セクション -->
@@ -3228,81 +3228,110 @@
       }
       const codeStr = buildGroupInviteCodeString();
       if (!codeStr) {
-        showToast('招待コードの生成に失敗しました', 'error');
+        showToast('同期コードの生成に失敗しました', 'error');
         return;
       }
       copyTextToClipboard(codeStr);
-      showToast('招待コードをコピーしました！LINEやメールで送信してください');
+      showToast('最新データを含む同期コードをコピーしました！');
     };
 
     window.joinGroupByInviteCode = async function() {
       const input = document.getElementById('input-invite-code');
       const rawVal = (input?.value || '').trim();
       if (!rawVal) {
-        showToast('招待コードを貼り付けてください', 'error');
+        showToast('招待・同期コードを貼り付けてください', 'error');
         return;
       }
       const match = rawVal.match(/TSYNC:([A-Za-z0-9+/=]+)/);
       const token = match ? match[1] : rawVal.replace(/^TSYNC:/i, '').trim();
       const parsed = decodeInvitePayload(token);
       if (!parsed || !parsed.id) {
-        showToast('招待コードの形式が正しくありません', 'error');
+        showToast('コードの形式が正しくありません', 'error');
         return;
       }
 
       const targetRoomId = String(parsed.id).trim();
       const targetRoomName = String(parsed.name || targetRoomId).trim();
+      const isSameCurrentRoom = (state.roomId === targetRoomId);
 
       state.roomName = targetRoomName;
-      if (parsed.h) state.hostUid = parsed.h;
+      if (parsed.h && !state.hostUid) state.hostUid = parsed.h;
       if (parsed.l && typeof parsed.l === 'object') {
-        state.customCategoryLabels = { ...parsed.l };
+        state.customCategoryLabels = { ...state.customCategoryLabels, ...parsed.l };
         saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
       }
 
-      // 同梱されたメンバー・仕事・予定をマージ復元
+      // 同梱されたメンバー・仕事・予定を最新更新日時優先で双方向マージ復元
       const incomingMembers = Array.isArray(parsed.m) ? parsed.m : [];
       const incomingTasks = Array.isArray(parsed.t) ? parsed.t : [];
       const incomingEvents = Array.isArray(parsed.e) ? parsed.e : [];
 
-      loadLocalRoomCache(targetRoomId);
+      if (!isSameCurrentRoom) {
+        loadLocalRoomCache(targetRoomId);
+      }
 
       incomingMembers.forEach(m => {
         if (!m.a || !m.n) return;
         const mDocId = `${targetRoomId}_${m.a}`;
-        if (!state.members.some(em => em.accountId === m.a || em.id === mDocId)) {
-          state.members.push({
-            id: mDocId,
-            roomId: targetRoomId,
-            accountId: m.a,
-            uid: m.a,
-            name: m.n,
-            role: m.r || '',
-            color: m.c || 'indigo',
-            updatedAt: Date.now()
-          });
+        const existingIdx = state.members.findIndex(em => em.accountId === m.a || em.id === mDocId);
+        const memberObj = {
+          id: mDocId,
+          roomId: targetRoomId,
+          accountId: m.a,
+          uid: m.a,
+          name: m.n,
+          role: m.r || '',
+          color: m.c || 'indigo',
+          updatedAt: Date.now()
+        };
+        if (existingIdx < 0) {
+          state.members.push(memberObj);
         }
       });
 
+      let mergedTaskCount = 0;
       incomingTasks.forEach(t => {
         if (!t.id) return;
-        if (!state.tasks.some(et => et.id === t.id)) {
+        const existingIdx = state.tasks.findIndex(et => et.id === t.id);
+        if (existingIdx < 0) {
           state.tasks.push({ ...t, roomId: targetRoomId });
+          mergedTaskCount++;
+        } else {
+          const localUpdated = state.tasks[existingIdx].updatedAt || 0;
+          const incomingUpdated = t.updatedAt || 0;
+          if (incomingUpdated >= localUpdated) {
+            state.tasks[existingIdx] = { ...state.tasks[existingIdx], ...t, roomId: targetRoomId };
+            mergedTaskCount++;
+          }
         }
       });
 
+      let mergedEventCount = 0;
       incomingEvents.forEach(ev => {
         if (!ev.id) return;
-        if (!state.events.some(eev => eev.id === ev.id)) {
+        const existingIdx = state.events.findIndex(eev => eev.id === ev.id);
+        if (existingIdx < 0) {
           state.events.push({ ...ev, roomId: targetRoomId });
+          mergedEventCount++;
+        } else {
+          const localUpdated = state.events[existingIdx].updatedAt || 0;
+          const incomingUpdated = ev.updatedAt || 0;
+          if (incomingUpdated >= localUpdated) {
+            state.events[existingIdx] = { ...state.events[existingIdx], ...ev, roomId: targetRoomId };
+            mergedEventCount++;
+          }
         }
       });
 
+      state.tasks.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
       saveLocalRoomCache(targetRoomId);
-      isInvitedViaUrl = true;
-      invitedRoomIdFromUrl = targetRoomId;
-      invitedRoomNameFromUrl = targetRoomName;
-      invitedSnapshotFromUrl = { h: parsed.h, m: incomingMembers, l: parsed.l };
+
+      if (!isSameCurrentRoom) {
+        isInvitedViaUrl = true;
+        invitedRoomIdFromUrl = targetRoomId;
+        invitedRoomNameFromUrl = targetRoomName;
+        invitedSnapshotFromUrl = { h: parsed.h, m: incomingMembers, l: parsed.l };
+      }
 
       closeRoomModal();
       closeCreateGroupModal();
@@ -3310,15 +3339,24 @@
 
       if (isFirebaseReady && db) {
         try {
-          for (const t of incomingTasks) {
+          await setDoc(doc(db, `${basePath}/rooms`, targetRoomId), {
+            name: targetRoomName,
+            hostUid: state.hostUid || parsed.h || getEffectiveAccountId(),
+            customCategoryLabels: state.customCategoryLabels || {},
+            updatedAt: Date.now()
+          }, { merge: true });
+          for (const t of state.tasks) {
             if (t.id) await setDoc(doc(db, `${basePath}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
           }
-          for (const ev of incomingEvents) {
+          for (const ev of state.events) {
             if (ev.id) await setDoc(doc(db, `${basePath}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
           }
         } catch (e) {}
       }
       renderAll();
+      if (isSameCurrentRoom) {
+        showToast(`最新データを同期しました（仕事${mergedTaskCount}件・予定${mergedEventCount}件反映）`);
+      }
     };
 
     window.closeRoomModal = function() {
