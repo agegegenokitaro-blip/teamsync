@@ -1115,9 +1115,12 @@
     let isInvitedViaUrl = false;
     let invitedRoomIdFromUrl = '';
     let invitedRoomNameFromUrl = '';
+    let invitedSnapshotFromUrl = null;
 
-    const appId = 'teamsync-shared';
-    const basePath = `artifacts/${appId}/public/data`;
+    // 環境提供の __app_id を最優先で使用（Firestoreセキュリティルール準拠）
+    const resolvedAppId = (typeof __app_id !== 'undefined' && __app_id) ? String(__app_id) : 'default-app-id';
+    const basePath = `artifacts/${resolvedAppId}/public/data`;
+    const legacySharedBasePath = `artifacts/teamsync-shared/public/data`;
 
     // ==========================================
     // 2. ユーティリティ関数
@@ -1231,11 +1234,43 @@
       }
     }
 
+    function encodeInvitePayload(payloadObj) {
+      try {
+        const json = JSON.stringify(payloadObj);
+        return btoa(unescape(encodeURIComponent(json)));
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function decodeInvitePayload(encodedStr) {
+      try {
+        const json = decodeURIComponent(escape(atob(encodedStr)));
+        return JSON.parse(json);
+      } catch (e) {
+        return null;
+      }
+    }
+
     function buildInviteShareText(roomId, roomName) {
       const cleanUrl = window.location.href.split('#')[0].split('?')[0];
       const displayTitle = roomName || roomId;
       const nameParam = (roomName && roomName !== roomId) ? `&name=${encodeURIComponent(roomName)}` : '';
-      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${cleanUrl}?room=${encodeURIComponent(roomId)}${nameParam}#room=${encodeURIComponent(roomId)}${nameParam}`;
+      // メンバー一覧・ホストID・色ラベルを招待URLに同梱（別ブラウザでも即座にメンバー・グループ情報を復元）
+      const snapshotPayload = {
+        h: state.hostUid || getEffectiveAccountId(),
+        m: (state.members || []).slice(0, 15).map(m => ({
+          a: m.accountId || '',
+          n: m.name || '',
+          r: m.role || '',
+          c: m.color || 'indigo'
+        })),
+        l: state.customCategoryLabels || {}
+      };
+      const encodedSnap = encodeInvitePayload(snapshotPayload);
+      const snapParam = encodedSnap ? `&inv=${encodeURIComponent(encodedSnap)}` : '';
+      const inviteUrl = `${cleanUrl}?room=${encodeURIComponent(roomId)}${nameParam}${snapParam}#room=${encodeURIComponent(roomId)}${nameParam}${snapParam}`;
+      return `【TeamSync】グループ「${displayTitle}」に招待されました！\nグループID: ${roomId}\n参加URL: ${inviteUrl}`;
     }
 
     // ==========================================
@@ -1467,29 +1502,87 @@
 
     async function migrateLegacyRoomDataIfAny(targetRoomId) {
       if (!isFirebaseReady || !db || !targetRoomId) return;
+      const legacyPaths = [
+        `${basePath}/rooms/${targetRoomId}`,
+        `${legacySharedBasePath}/rooms/${targetRoomId}`
+      ];
+      for (const prefix of legacyPaths) {
+        try {
+          const legacyTasksSnap = await getDocs(collection(db, `${prefix}/tasks`));
+          if (!legacyTasksSnap.empty) {
+            for (const d of legacyTasksSnap.docs) {
+              const data = d.data();
+              await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
+            }
+          }
+          const legacyEventsSnap = await getDocs(collection(db, `${prefix}/events`));
+          if (!legacyEventsSnap.empty) {
+            for (const d of legacyEventsSnap.docs) {
+              const data = d.data();
+              await setDoc(doc(db, `${basePath}/events`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
+            }
+          }
+          const legacyMembersSnap = await getDocs(collection(db, `${prefix}/members`));
+          if (!legacyMembersSnap.empty) {
+            for (const d of legacyMembersSnap.docs) {
+              const data = d.data();
+              await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${d.id}`), { ...data, roomId: targetRoomId }, { merge: true });
+            }
+          }
+        } catch (e) {}
+      }
+      // 旧フラットパス (teamsync-shared) からの移行も試行
       try {
-        const legacyTasksSnap = await getDocs(collection(db, `${basePath}/rooms/${targetRoomId}/tasks`));
-        if (!legacyTasksSnap.empty) {
-          for (const d of legacyTasksSnap.docs) {
-            const data = d.data();
-            await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
-          }
+        const oldFlatTasks = await getDocs(query(collection(db, `${legacySharedBasePath}/tasks`), where('roomId', '==', targetRoomId)));
+        for (const d of oldFlatTasks.docs) {
+          await setDoc(doc(db, `${basePath}/tasks`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
-        const legacyEventsSnap = await getDocs(collection(db, `${basePath}/rooms/${targetRoomId}/events`));
-        if (!legacyEventsSnap.empty) {
-          for (const d of legacyEventsSnap.docs) {
-            const data = d.data();
-            await setDoc(doc(db, `${basePath}/events`, d.id), { ...data, roomId: targetRoomId }, { merge: true });
-          }
+        const oldFlatEvents = await getDocs(query(collection(db, `${legacySharedBasePath}/events`), where('roomId', '==', targetRoomId)));
+        for (const d of oldFlatEvents.docs) {
+          await setDoc(doc(db, `${basePath}/events`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
-        const legacyMembersSnap = await getDocs(collection(db, `${basePath}/rooms/${targetRoomId}/members`));
-        if (!legacyMembersSnap.empty) {
-          for (const d of legacyMembersSnap.docs) {
-            const data = d.data();
-            await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${d.id}`), { ...data, roomId: targetRoomId }, { merge: true });
-          }
+        const oldFlatMembers = await getDocs(query(collection(db, `${legacySharedBasePath}/members`), where('roomId', '==', targetRoomId)));
+        for (const d of oldFlatMembers.docs) {
+          await setDoc(doc(db, `${basePath}/members`, d.id), { ...d.data(), roomId: targetRoomId }, { merge: true });
         }
       } catch (e) {}
+    }
+
+    async function applyInvitedSnapshotIfPresent(targetRoomId) {
+      if (!invitedSnapshotFromUrl || invitedRoomIdFromUrl !== targetRoomId) return;
+      const snapData = invitedSnapshotFromUrl;
+      if (snapData.h && !state.hostUid) {
+        state.hostUid = snapData.h;
+      }
+      if (snapData.l && Object.keys(snapData.l).length > 0) {
+        state.customCategoryLabels = { ...snapData.l, ...state.customCategoryLabels };
+        saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
+      }
+      if (Array.isArray(snapData.m)) {
+        for (const m of snapData.m) {
+          if (!m.a || !m.n) continue;
+          const mDocId = `${targetRoomId}_${m.a}`;
+          const existsLocal = state.members.some(em => em.accountId === m.a || em.id === mDocId);
+          const memberPayload = {
+            roomId: targetRoomId,
+            accountId: m.a,
+            uid: m.a,
+            name: m.n,
+            role: m.r || '',
+            color: m.c || 'indigo',
+            updatedAt: Date.now()
+          };
+          if (!existsLocal) {
+            state.members.push({ id: mDocId, ...memberPayload });
+          }
+          if (isFirebaseReady && db) {
+            try {
+              await setDoc(doc(db, `${basePath}/members`, mDocId), memberPayload, { merge: true });
+            } catch (e) {}
+          }
+        }
+        saveLocalRoomCache(targetRoomId);
+      }
     }
 
     async function verifyAndEnterRoom(targetRoomId, options = {}) {
@@ -1502,9 +1595,12 @@
       loadLocalRoomCache(targetRoomId);
       updateProfileUI();
 
+      // 招待URL同梱スナップショットがあれば即座に反映
+      await applyInvitedSnapshotIfPresent(targetRoomId);
+
       if (!isFirebaseReady || !db) {
         state.roomId = targetRoomId;
-        if (!state.roomName) state.roomName = targetRoomId;
+        if (!state.roomName) state.roomName = invitedRoomNameFromUrl || targetRoomId;
         if (!state.hostUid) state.hostUid = getEffectiveAccountId();
         saveGroupToHistory(targetRoomId, state.roomName);
         updateUrlHashState();
@@ -1538,14 +1634,18 @@
             const restoredName = knownName || targetRoomId;
             const newCode = generateHostRecoveryCode();
             state.roomName = restoredName;
-            state.hostUid = myAccId;
+            // 招待URLに元のホストIDが含まれていればそれを優先保持（自分が勝手にホストにならない）
+            if (!state.hostUid) {
+              state.hostUid = (invitedSnapshotFromUrl && invitedSnapshotFromUrl.h) ? invitedSnapshotFromUrl.h : myAccId;
+            }
             state.hostRecoveryCode = newCode;
             state.hostClaim = null;
             await setDoc(roomDocRef, {
               name: restoredName,
-              hostUid: myAccId,
+              hostUid: state.hostUid,
               hostRecoveryCode: newCode,
               hostClaim: null,
+              customCategoryLabels: state.customCategoryLabels || {},
               createdAt: Date.now(),
               updatedAt: Date.now()
             }, { merge: true });
@@ -1564,13 +1664,14 @@
             hostUid: myAccId,
             hostRecoveryCode: newCode,
             hostClaim: null,
+            customCategoryLabels: state.customCategoryLabels || {},
             createdAt: Date.now(),
             updatedAt: Date.now()
           }, { merge: true });
         } else if (snap.exists()) {
           const data = snap.data();
           state.roomName = data.name || (invitedRoomIdFromUrl === targetRoomId && invitedRoomNameFromUrl) || targetRoomId;
-          state.hostUid = data.hostUid || '';
+          state.hostUid = data.hostUid || state.hostUid || '';
           state.hostRecoveryCode = data.hostRecoveryCode || '';
           state.hostClaim = data.hostClaim || null;
           if (data.customCategoryLabels && Object.keys(data.customCategoryLabels).length > 0) {
@@ -1590,6 +1691,7 @@
         if (isInvitedViaUrl && invitedRoomIdFromUrl === targetRoomId) {
           isInvitedViaUrl = false;
           invitedRoomNameFromUrl = '';
+          invitedSnapshotFromUrl = null;
           if (!state.profile.name || state.profile.name === 'ゲスト') {
             setTimeout(() => {
               openProfileModal();
@@ -3540,7 +3642,9 @@
           if (decodedId && decodedId !== 'team-alpha') {
             const nameMatch = src.match(/[?#&]name=([^&]+)/) || src.match(/^name=([^&]+)/);
             const decodedName = (nameMatch && nameMatch[1]) ? decodeURIComponent(nameMatch[1]).trim() : '';
-            return { id: decodedId, name: decodedName };
+            const invMatch = src.match(/[?#&]inv=([^&]+)/) || src.match(/^inv=([^&]+)/);
+            const decodedInv = (invMatch && invMatch[1]) ? decodeInvitePayload(decodeURIComponent(invMatch[1]).trim()) : null;
+            return { id: decodedId, name: decodedName, snapshot: decodedInv };
           }
         }
       }
@@ -3555,6 +3659,10 @@
         isInvitedViaUrl = true;
         invitedRoomIdFromUrl = parsed.id;
         invitedRoomNameFromUrl = parsed.name;
+        invitedSnapshotFromUrl = parsed.snapshot || null;
+        if (parsed.snapshot && parsed.snapshot.h) {
+          state.hostUid = parsed.snapshot.h;
+        }
         return;
       }
       if (state.recentGroups.length > 0) {
@@ -3569,6 +3677,7 @@
         isInvitedViaUrl = true;
         invitedRoomIdFromUrl = parsed.id;
         invitedRoomNameFromUrl = parsed.name;
+        invitedSnapshotFromUrl = parsed.snapshot || null;
         if (parsed.name) state.roomName = parsed.name;
         closeCreateGroupModal();
         closeRoomModal();
