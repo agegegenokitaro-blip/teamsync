@@ -1115,6 +1115,8 @@
     let unsubMembers = null;
     let unsubTasks = null;
     let unsubEvents = null;
+    let isInvitedViaUrl = false;
+    let invitedRoomIdFromUrl = '';
 
     // ==========================================
     // 2. ユーティリティ関数
@@ -1484,7 +1486,7 @@
 
         if (!snap.exists() && !options.isNewlyCreated) {
           // 履歴やURLハッシュからの復帰時は削除せず、同IDで復元できるように案内
-          const isFromHistoryOrHash = state.recentGroups.some(g => g.id === targetRoomId) || (window.location.hash || '').includes(encodeURIComponent(targetRoomId));
+          const isFromHistoryOrHash = state.recentGroups.some(g => g.id === targetRoomId) || isInvitedViaUrl || (window.location.hash || '').includes(encodeURIComponent(targetRoomId));
           if (isFromHistoryOrHash) {
             const historyItem = state.recentGroups.find(g => g.id === targetRoomId);
             const restoredName = (historyItem && historyItem.name) ? historyItem.name : targetRoomId;
@@ -1501,7 +1503,7 @@
               createdAt: Date.now(),
               updatedAt: Date.now()
             }, { merge: true });
-            showToast(`グループ「${restoredName}」を復元しました`, 'info');
+            showToast(`グループ「${restoredName}」に参加しました`, 'info');
           } else {
             showGroupNotFoundModal(targetRoomId);
             return false;
@@ -1536,6 +1538,19 @@
         await migrateLegacyRoomDataIfAny(targetRoomId);
         subscribeRoomRealtime(targetRoomId);
         await syncMyRoomMemberDoc(targetRoomId);
+
+        // 招待リンクから初参加で表示名がまだ「ゲスト」の場合は名前入力モーダルを開く
+        if (isInvitedViaUrl && invitedRoomIdFromUrl === targetRoomId) {
+          isInvitedViaUrl = false;
+          if (!state.profile.name || state.profile.name === 'ゲスト') {
+            setTimeout(() => {
+              openProfileModal();
+              showToast(`「${state.roomName || targetRoomId}」へようこそ！表示名を設定してください`, 'info');
+            }, 350);
+          } else {
+            showToast(`招待されたグループ「${state.roomName || targetRoomId}」に参加しました`);
+          }
+        }
         return true;
       } catch (err) {
         console.error('verifyAndEnterRoom error:', err);
@@ -3948,6 +3963,8 @@
         const decoded = decodeURIComponent(roomMatch[1]).trim();
         if (decoded && decoded !== 'team-alpha') {
           state.roomId = decoded;
+          isInvitedViaUrl = true;
+          invitedRoomIdFromUrl = decoded;
           return;
         }
       }
@@ -3956,6 +3973,21 @@
         state.roomName = state.recentGroups[0].name || state.roomId;
       }
     }
+
+    window.addEventListener('hashchange', async () => {
+      const hash = window.location.hash || '';
+      const roomMatch = hash.match(/room=([^&]+)/);
+      if (roomMatch && roomMatch[1]) {
+        const decoded = decodeURIComponent(roomMatch[1]).trim();
+        if (decoded && decoded !== 'team-alpha' && decoded !== state.roomId) {
+          isInvitedViaUrl = true;
+          invitedRoomIdFromUrl = decoded;
+          closeCreateGroupModal();
+          closeRoomModal();
+          await verifyAndEnterRoom(decoded);
+        }
+      }
+    });
 
     hideSplashScreenAfterAnimation();
     loadGroupHistory();
@@ -3967,7 +3999,9 @@
       if (initialHistoryHit && initialHistoryHit.name) {
         state.roomName = initialHistoryHit.name;
       }
-      saveGroupToHistory(state.roomId, state.roomName);
+      if (!isInvitedViaUrl) {
+        saveGroupToHistory(state.roomId, state.roomName);
+      }
     }
     updateUrlHashState();
     updateRoomUI();
@@ -3982,7 +4016,7 @@
     initFirebase();
     checkAndApplyLatestAppVersion();
 
-    if (!state.roomId) {
+    if (!state.roomId && !isInvitedViaUrl) {
       openCreateGroupModal(true);
     }
   </script>
