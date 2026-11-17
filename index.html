@@ -1332,13 +1332,51 @@
       const cleanUrl = window.location.href.split('#')[0].split('?')[0];
       const displayTitle = roomName || roomId;
       const nameParam = (roomName && roomName !== roomId) ? `&name=${encodeURIComponent(roomName)}` : '';
+      const myAccId = getEffectiveAccountId();
+      const memberList = Array.isArray(state.members) ? [...state.members] : [];
+      if (!memberList.some(m => m.accountId === myAccId)) {
+        memberList.unshift({
+          accountId: myAccId,
+          name: state.profile.name || 'ホスト',
+          role: state.profile.role || '',
+          color: state.profile.color || 'indigo'
+        });
+      }
       const snapshotPayload = {
-        h: state.hostUid || getEffectiveAccountId(),
-        m: (state.members || []).slice(0, 15).map(m => ({
+        h: state.hostUid || myAccId,
+        m: memberList.slice(0, 15).map(m => ({
           a: m.accountId || '',
           n: m.name || '',
           r: m.role || '',
           c: m.color || 'indigo'
+        })),
+        t: (state.tasks || []).slice(0, 30).map(t => ({
+          id: t.id,
+          title: t.title || '',
+          member: t.member || '',
+          status: t.status || '進行中',
+          progress: Number(t.progress || 0),
+          priority: t.priority || '中',
+          tag: t.tag || '',
+          desc: t.desc || '',
+          collaborators: Array.isArray(t.collaborators) ? t.collaborators : [],
+          comments: Array.isArray(t.comments) ? t.comments : [],
+          acknowledgedBy: Array.isArray(t.acknowledgedBy) ? t.acknowledgedBy : [],
+          createdAt: t.createdAt || Date.now(),
+          updatedAt: t.updatedAt || Date.now()
+        })),
+        e: (state.events || []).slice(0, 40).map(ev => ({
+          id: ev.id,
+          title: ev.title || '',
+          date: ev.date || '',
+          allDay: !!ev.allDay,
+          time: ev.time || '10:00',
+          category: ev.category || 'blue',
+          member: ev.member || '',
+          memo: ev.memo || '',
+          collaborators: Array.isArray(ev.collaborators) ? ev.collaborators : [],
+          createdAt: ev.createdAt || Date.now(),
+          updatedAt: ev.updatedAt || Date.now()
         })),
         l: state.customCategoryLabels || {}
       };
@@ -1633,8 +1671,43 @@
             } catch (e) {}
           }
         }
-        saveLocalRoomCache(targetRoomId);
       }
+      if (Array.isArray(snapData.t)) {
+        for (const t of snapData.t) {
+          if (!t.id) continue;
+          const existingIdx = state.tasks.findIndex(et => et.id === t.id);
+          const taskPayload = { ...t, roomId: targetRoomId };
+          if (existingIdx < 0) {
+            state.tasks.push(taskPayload);
+          } else if ((t.updatedAt || 0) >= (state.tasks[existingIdx].updatedAt || 0)) {
+            state.tasks[existingIdx] = { ...state.tasks[existingIdx], ...taskPayload };
+          }
+          if (isFirebaseReady && db) {
+            try {
+              await setDoc(doc(db, `${basePath}/tasks`, t.id), taskPayload, { merge: true });
+            } catch (e) {}
+          }
+        }
+        state.tasks.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+      }
+      if (Array.isArray(snapData.e)) {
+        for (const ev of snapData.e) {
+          if (!ev.id) continue;
+          const existingIdx = state.events.findIndex(eev => eev.id === ev.id);
+          const eventPayload = { ...ev, roomId: targetRoomId };
+          if (existingIdx < 0) {
+            state.events.push(eventPayload);
+          } else if ((ev.updatedAt || 0) >= (state.events[existingIdx].updatedAt || 0)) {
+            state.events[existingIdx] = { ...state.events[existingIdx], ...eventPayload };
+          }
+          if (isFirebaseReady && db) {
+            try {
+              await setDoc(doc(db, `${basePath}/events`, ev.id), eventPayload, { merge: true });
+            } catch (e) {}
+          }
+        }
+      }
+      saveLocalRoomCache(targetRoomId);
     }
 
     async function verifyAndEnterRoom(targetRoomId, options = {}) {
@@ -1798,11 +1871,24 @@
 
       // 2. メンバー購読
       const qMembers = query(collection(db, `${basePath}/members`), where('roomId', '==', targetRoomId));
-      unsubMembers = onSnapshot(qMembers, (snap) => {
+      unsubMembers = onSnapshot(qMembers, async (snap) => {
         const list = [];
         snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-        state.members = list;
-        saveLocalRoomCache(targetRoomId);
+        if (list.length === 0 && state.members.length > 0) {
+          for (const m of state.members) {
+            if (m.accountId) {
+              try {
+                await setDoc(doc(db, `${basePath}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
+              } catch (e) {}
+            }
+          }
+        } else {
+          const mergedMap = new Map();
+          state.members.forEach(m => { if (m.accountId || m.id) mergedMap.set(m.accountId || m.id, m); });
+          list.forEach(m => { if (m.accountId || m.id) mergedMap.set(m.accountId || m.id, m); });
+          state.members = Array.from(mergedMap.values());
+          saveLocalRoomCache(targetRoomId);
+        }
         updateMembersBadgeAndFilters();
         renderActiveMembersList();
         renderMembersManageList();
@@ -1810,12 +1896,31 @@
 
       // 3. 仕事タスク購読
       const qTasks = query(collection(db, `${basePath}/tasks`), where('roomId', '==', targetRoomId));
-      unsubTasks = onSnapshot(qTasks, (snap) => {
+      unsubTasks = onSnapshot(qTasks, async (snap) => {
         const list = [];
         snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-        list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
-        state.tasks = list;
-        saveLocalRoomCache(targetRoomId);
+        if (list.length === 0 && state.tasks.length > 0) {
+          for (const t of state.tasks) {
+            if (t.id) {
+              try {
+                await setDoc(doc(db, `${basePath}/tasks`, t.id), { ...t, roomId: targetRoomId }, { merge: true });
+              } catch (e) {}
+            }
+          }
+        } else {
+          const mergedMap = new Map();
+          state.tasks.forEach(t => { if (t.id) mergedMap.set(t.id, t); });
+          list.forEach(t => {
+            if (!t.id) return;
+            const prev = mergedMap.get(t.id);
+            if (!prev || (t.updatedAt || 0) >= (prev.updatedAt || 0)) {
+              mergedMap.set(t.id, t);
+            }
+          });
+          state.tasks = Array.from(mergedMap.values());
+          state.tasks.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          saveLocalRoomCache(targetRoomId);
+        }
         renderTasks();
         if (state.activeDetailTaskId) {
           renderTaskDetailModal(state.activeDetailTaskId);
@@ -1824,11 +1929,30 @@
 
       // 4. カレンダー予定購読
       const qEvents = query(collection(db, `${basePath}/events`), where('roomId', '==', targetRoomId));
-      unsubEvents = onSnapshot(qEvents, (snap) => {
+      unsubEvents = onSnapshot(qEvents, async (snap) => {
         const list = [];
         snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-        state.events = list;
-        saveLocalRoomCache(targetRoomId);
+        if (list.length === 0 && state.events.length > 0) {
+          for (const ev of state.events) {
+            if (ev.id) {
+              try {
+                await setDoc(doc(db, `${basePath}/events`, ev.id), { ...ev, roomId: targetRoomId }, { merge: true });
+              } catch (e) {}
+            }
+          }
+        } else {
+          const mergedMap = new Map();
+          state.events.forEach(ev => { if (ev.id) mergedMap.set(ev.id, ev); });
+          list.forEach(ev => {
+            if (!ev.id) return;
+            const prev = mergedMap.get(ev.id);
+            if (!prev || (ev.updatedAt || 0) >= (prev.updatedAt || 0)) {
+              mergedMap.set(ev.id, ev);
+            }
+          });
+          state.events = Array.from(mergedMap.values());
+          saveLocalRoomCache(targetRoomId);
+        }
         renderCalendar();
         renderEventsList();
       });
@@ -3356,8 +3480,11 @@
       closeRoomModal();
       closeCreateGroupModal();
       await verifyAndEnterRoom(targetRoomId);
+      // 招待コードで加入した本人の情報を即座にメンバー一覧へ自動登録
+      await syncMyRoomMemberDoc(targetRoomId);
       updateMembersBadgeAndFilters();
       renderActiveMembersList();
+      renderMembersManageList();
 
       if (isFirebaseReady && db) {
         try {
