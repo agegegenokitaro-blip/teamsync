@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -30,11 +30,28 @@
     }
   </script>
   <style>
-    /* モバイル横はみ出し・余計な空白防止 */
+    /* モバイル横はみ出し・余計な空白・ダブルタップ拡大防止 */
     html, body {
       max-width: 100%;
       overflow-x: hidden;
       -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+    * {
+      touch-action: manipulation;
+    }
+    /* iOS Safari等で入力欄タップ時に画面が自動ズームされる現象を防止 */
+    @media (max-width: 767px) {
+      input[type="text"],
+      input[type="date"],
+      input[type="time"],
+      input[type="search"],
+      input[type="email"],
+      input[type="number"],
+      textarea,
+      select {
+        font-size: 16px !important;
+      }
     }
     /* カスタムスクロールバー */
     ::-webkit-scrollbar {
