@@ -1137,22 +1137,30 @@
     let invitedRoomNameFromUrl = '';
     let invitedSnapshotFromUrl = null;
 
-    // 環境提供の __app_id を初期値とし、招待コード／招待リンク経由でホストと同じデータ空間IDに統一可能にする
-    const defaultResolvedAppId = (typeof __app_id !== 'undefined' && __app_id) ? String(__app_id) : 'default-app-id';
-    let activeAppId = localStorage.getItem('teamsync_active_app_id') || defaultResolvedAppId;
+    // すべての端末・ブラウザが常に同じFirestoreプロジェクト・正規パスへ接続できるよう統一
+    const resolvedAppId = (typeof __app_id !== 'undefined' && __app_id) ? String(__app_id) : 'default-app-id';
+    try { localStorage.removeItem('teamsync_active_app_id'); } catch (e) {}
 
     function getBasePath() {
-      return `artifacts/${activeAppId}/public/data`;
+      return `artifacts/${resolvedAppId}/public/data`;
     }
 
-    function setActiveAppId(nextAppId) {
-      if (!nextAppId) return;
-      const cleaned = String(nextAppId).trim();
-      if (!cleaned) return;
-      activeAppId = cleaned;
-      try {
-        localStorage.setItem('teamsync_active_app_id', cleaned);
-      } catch (e) {}
+    // グループ切り替え・新規作成時に前のグループのメモリ状態とリアルタイム購読を完全に初期化
+    function resetCurrentRoomMemoryState() {
+      if (unsubRoomMeta) { unsubRoomMeta(); unsubRoomMeta = null; }
+      if (unsubMembers) { unsubMembers(); unsubMembers = null; }
+      if (unsubTasks) { unsubTasks(); unsubTasks = null; }
+      if (unsubEvents) { unsubEvents(); unsubEvents = null; }
+      state.hostUid = '';
+      state.hostRecoveryCode = '';
+      state.hostClaim = null;
+      state.members = [];
+      state.tasks = [];
+      state.events = [];
+      state.customCategoryLabels = {};
+      state.selectedDate = null;
+      state.selectedEventColors = [];
+      state.activeDetailTaskId = null;
     }
 
     // ==========================================
@@ -1299,7 +1307,6 @@
       }
       const payload = {
         v: 1,
-        appId: activeAppId,
         id: state.roomId,
         name: state.roomName || state.roomId,
         h: state.hostUid || myAccId,
@@ -1358,7 +1365,6 @@
         });
       }
       const snapshotPayload = {
-        appId: activeAppId,
         h: state.hostUid || myAccId,
         m: memberList.slice(0, 15).map(m => ({
           a: m.accountId || '',
@@ -1657,9 +1663,6 @@
     async function applyInvitedSnapshotIfPresent(targetRoomId) {
       if (!invitedSnapshotFromUrl || invitedRoomIdFromUrl !== targetRoomId) return;
       const snapData = invitedSnapshotFromUrl;
-      if (snapData.appId) {
-        setActiveAppId(snapData.appId);
-      }
       if (snapData.h && !state.hostUid) {
         state.hostUid = snapData.h;
       }
@@ -1731,18 +1734,35 @@
 
     async function verifyAndEnterRoom(targetRoomId, options = {}) {
       if (!targetRoomId) return false;
-      loadRoomProfileLocal(targetRoomId);
-      const localLabels = loadRoomCategoryLabelsLocal(targetRoomId);
-      if (Object.keys(localLabels).length > 0) {
-        state.customCategoryLabels = { ...localLabels, ...state.customCategoryLabels };
+
+      // 別のグループへ移動する場合は、必ず前のグループのメモリ状態・購読を完全リセット
+      if (state.roomId !== targetRoomId || options.isNewlyCreated) {
+        resetCurrentRoomMemoryState();
       }
-      loadLocalRoomCache(targetRoomId);
+
+      loadRoomProfileLocal(targetRoomId);
       updateProfileUI();
 
-      // 招待URL同梱スナップショットがあれば即座に反映
-      await applyInvitedSnapshotIfPresent(targetRoomId);
+      if (options.isNewlyCreated) {
+        // 新規グループ作成時はローカルキャッシュを引き継がず完全に空の状態から開始
+        state.roomId = targetRoomId;
+        state.roomName = options.explicitRoomName || state.roomName || targetRoomId;
+        state.hostUid = getEffectiveAccountId();
+        state.customCategoryLabels = {};
+        saveRoomCategoryLabelsLocal(targetRoomId, {});
+        saveLocalRoomCache(targetRoomId);
+      } else {
+        const localLabels = loadRoomCategoryLabelsLocal(targetRoomId);
+        if (Object.keys(localLabels).length > 0) {
+          state.customCategoryLabels = { ...localLabels };
+        }
+        loadLocalRoomCache(targetRoomId);
+      }
 
       if (!isFirebaseReady || !db) {
+        if (!options.isNewlyCreated) {
+          await applyInvitedSnapshotIfPresent(targetRoomId);
+        }
         state.roomId = targetRoomId;
         if (!state.roomName) state.roomName = invitedRoomNameFromUrl || targetRoomId;
         if (!state.hostUid) state.hostUid = getEffectiveAccountId();
@@ -1758,7 +1778,35 @@
         const snap = await getDoc(roomDocRef);
         const myAccId = getEffectiveAccountId();
 
-        if (!snap.exists() && !options.isNewlyCreated) {
+        if (options.isNewlyCreated) {
+          const newCode = generateHostRecoveryCode();
+          const finalNewName = options.explicitRoomName || state.roomName || targetRoomId;
+          state.roomName = finalNewName;
+          state.hostUid = myAccId;
+          state.hostRecoveryCode = newCode;
+          state.hostClaim = null;
+          await setDoc(roomDocRef, {
+            name: finalNewName,
+            hostUid: myAccId,
+            hostRecoveryCode: newCode,
+            hostClaim: null,
+            customCategoryLabels: state.customCategoryLabels || {},
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+        } else if (snap.exists()) {
+          // クラウド上に既にホストの部屋が存在する場合は、クラウド側の正規部屋情報へそのまま入室（別部屋を作らない）
+          const data = snap.data();
+          state.roomName = data.name || (invitedRoomIdFromUrl === targetRoomId && invitedRoomNameFromUrl) || targetRoomId;
+          state.hostUid = data.hostUid || state.hostUid || '';
+          state.hostRecoveryCode = data.hostRecoveryCode || '';
+          state.hostClaim = data.hostClaim || null;
+          if (data.customCategoryLabels && Object.keys(data.customCategoryLabels).length > 0) {
+            state.customCategoryLabels = data.customCategoryLabels;
+            saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
+          }
+        } else {
+          // クラウド上に部屋文書がない場合：既存コレクションまたは招待URL経由なら復元
           let hasExistingRoomRecords = false;
           try {
             const mSnap = await getDocs(query(collection(db, `${getBasePath()}/members`), where('roomId', '==', targetRoomId)));
@@ -1775,10 +1823,10 @@
               : '';
 
           if (hasExistingRoomRecords || historyItem || (isInvitedViaUrl && invitedRoomIdFromUrl === targetRoomId)) {
+            await applyInvitedSnapshotIfPresent(targetRoomId);
             const restoredName = knownName || targetRoomId;
             const newCode = generateHostRecoveryCode();
             state.roomName = restoredName;
-            // 招待URLに元のホストIDが含まれていればそれを優先保持（自分が勝手にホストにならない）
             if (!state.hostUid) {
               state.hostUid = (invitedSnapshotFromUrl && invitedSnapshotFromUrl.h) ? invitedSnapshotFromUrl.h : myAccId;
             }
@@ -1799,28 +1847,6 @@
             }
             showGroupNotFoundModal(targetRoomId, knownName);
             return false;
-          }
-        } else if (options.isNewlyCreated) {
-          const newCode = generateHostRecoveryCode();
-          state.hostRecoveryCode = newCode;
-          await setDoc(roomDocRef, {
-            name: state.roomName || targetRoomId,
-            hostUid: myAccId,
-            hostRecoveryCode: newCode,
-            hostClaim: null,
-            customCategoryLabels: state.customCategoryLabels || {},
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          }, { merge: true });
-        } else if (snap.exists()) {
-          const data = snap.data();
-          state.roomName = data.name || (invitedRoomIdFromUrl === targetRoomId && invitedRoomNameFromUrl) || targetRoomId;
-          state.hostUid = data.hostUid || state.hostUid || '';
-          state.hostRecoveryCode = data.hostRecoveryCode || '';
-          state.hostClaim = data.hostClaim || null;
-          if (data.customCategoryLabels && Object.keys(data.customCategoryLabels).length > 0) {
-            state.customCategoryLabels = data.customCategoryLabels;
-            saveRoomCategoryLabelsLocal(targetRoomId, state.customCategoryLabels);
           }
         }
 
@@ -3351,14 +3377,24 @@
 
       if (!groupName || !groupId || !userName) return;
 
+      // 招待URL経由フラグや前のグループのメモリ状態を完全にクリアしてから新規作成
+      isInvitedViaUrl = false;
+      invitedRoomIdFromUrl = '';
+      invitedRoomNameFromUrl = '';
+      invitedSnapshotFromUrl = null;
+      resetCurrentRoomMemoryState();
+
+      state.roomId = groupId;
       state.roomName = groupName;
       state.hostUid = getEffectiveAccountId();
       state.profile = { name: userName, role: userRole, color: state.profile.color || 'indigo' };
       saveRoomProfileLocal(groupId, state.profile);
       updateProfileUI();
+      updateRoomUI();
+      renderAll();
 
       closeCreateGroupModal();
-      await verifyAndEnterRoom(groupId, { isNewlyCreated: true });
+      await verifyAndEnterRoom(groupId, { isNewlyCreated: true, explicitRoomName: groupName });
 
       if (shouldCopy) {
         const shareText = buildInviteShareText(groupId, groupName);
@@ -3412,12 +3448,11 @@
       const targetRoomName = String(parsed.name || targetRoomId).trim();
       const isSameCurrentRoom = (state.roomId === targetRoomId);
 
-      // ホスト側のデータ空間ID（appId）が含まれていれば自動統一して同じクラウドパスへ接続
-      if (parsed.appId) {
-        setActiveAppId(parsed.appId);
+      if (!isSameCurrentRoom) {
+        resetCurrentRoomMemoryState();
+        state.roomName = targetRoomName;
       }
 
-      state.roomName = targetRoomName;
       if (parsed.h && !state.hostUid) state.hostUid = parsed.h;
       if (parsed.l && typeof parsed.l === 'object') {
         state.customCategoryLabels = { ...state.customCategoryLabels, ...parsed.l };
@@ -3430,9 +3465,6 @@
       const incomingEvents = Array.isArray(parsed.e) ? parsed.e : [];
 
       if (!isSameCurrentRoom) {
-        state.members = [];
-        state.tasks = [];
-        state.events = [];
         loadLocalRoomCache(targetRoomId);
       }
 
@@ -3512,12 +3544,6 @@
 
       if (isFirebaseReady && db) {
         try {
-          await setDoc(doc(db, `${getBasePath()}/rooms`, targetRoomId), {
-            name: targetRoomName,
-            hostUid: state.hostUid || parsed.h || getEffectiveAccountId(),
-            customCategoryLabels: state.customCategoryLabels || {},
-            updatedAt: Date.now()
-          }, { merge: true });
           for (const m of state.members) {
             if (m.accountId) {
               await setDoc(doc(db, `${getBasePath()}/members`, `${targetRoomId}_${m.accountId}`), { ...m, roomId: targetRoomId }, { merge: true });
@@ -4015,9 +4041,6 @@
         invitedRoomIdFromUrl = parsed.id;
         invitedRoomNameFromUrl = parsed.name;
         invitedSnapshotFromUrl = parsed.snapshot || null;
-        if (parsed.snapshot && parsed.snapshot.appId) {
-          setActiveAppId(parsed.snapshot.appId);
-        }
         if (parsed.snapshot && parsed.snapshot.h) {
           state.hostUid = parsed.snapshot.h;
         }
@@ -4032,13 +4055,11 @@
     window.addEventListener('hashchange', async () => {
       const parsed = parseRoomParamsFromUrl(window.location.search, window.location.hash);
       if (parsed && parsed.id !== state.roomId) {
+        resetCurrentRoomMemoryState();
         isInvitedViaUrl = true;
         invitedRoomIdFromUrl = parsed.id;
         invitedRoomNameFromUrl = parsed.name;
         invitedSnapshotFromUrl = parsed.snapshot || null;
-        if (parsed.snapshot && parsed.snapshot.appId) {
-          setActiveAppId(parsed.snapshot.appId);
-        }
         if (parsed.name) state.roomName = parsed.name;
         closeCreateGroupModal();
         closeRoomModal();
